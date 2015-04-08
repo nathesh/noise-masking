@@ -34,37 +34,28 @@ static int output_callback(const void *inputBuffer, void *outputBuffer,
 { 
   	/* Intialization */
    float* out        = (float*)outputBuffer;
-   float buffer; 
+   
    data* data_struct = (data*) userData;
-   int i,y,z;
+   int i;
    /* Intialization */
 
   for (i = 0; i < framesPerBuffer; i++)
   {
-    buffer = 0; 
     if(data_struct->cursor < data_struct->num_frames*data_struct->channels)
     {
-      //*out++ = data_struct->data[data_struct->cursor++];
-      //*out++ = data_struct->data[data_struct->cursor++];
-
-      for(y=0;y<10;y++)
-      {
-        buffer +=data_struct->data[data_struct->cursor+data_struct->num_frames*2*y];
-
-      }
-      *out++ = buffer*.3;
-     	data_struct->cursor++;
-     	
-    }
+      *out++ = data_struct->data[data_struct->cursor++];
+      *out++ = data_struct->data[data_struct->cursor++];   
+    }  
     else
     {
     	// pick in the 3/4 of the frames so cuts and randomize the location to not make it seem repetative  
-     
-    	data_struct->cursor = 0; 
+       
+    	 data_struct->cursor = 0;  
+       return  paComplete;
     }
 
   }
-  return  paContinue ;
+  return  paContinue;
   }
 
 int main(void)
@@ -83,8 +74,8 @@ int read_write_streams(void)
 	PaStreamParameters input, output; 
 	PaStream *stream_input,  *stream_output; 
 	PaError error_input,error_output;
-	float *recordsamples;
-	int i,totalframes,numsamples,numbytes; 
+	float *recordsamples,summation;
+	int i,totalframes,numsamples,numbytes,y; 
 	data* struct_data;
 	/* Declaration */
 	
@@ -92,6 +83,7 @@ int read_write_streams(void)
 
 	/* Read the wav */
 	struct_data = output_file();
+
   /* Read the wav */
 
 	/* Intialization */
@@ -177,6 +169,23 @@ int read_write_streams(void)
       //error_output = Pa_WriteStream(stream_output,outputsamples, 441000);
       if( error_output  != paNoError && 0) goto error_o;
       //printf("HEREReading\n");
+      if(Pa_IsStreamActive(stream_output)==0)
+      {
+        Pa_StopStream(stream_output);
+        for(i = 0;i<struct_data->num_frames*2;i++) // is accessing num_frames bad?
+        {
+          summation = 0;
+          for(y = 0; y<11;y++)
+          {
+            summation += struct_data->data[y*struct_data->num_frames*2+i];
+          }
+          struct_data->data[i] = summation/11;
+        }
+        error_output = Pa_StartStream(stream_output);
+        printf("%s\n","Restarting Stream");
+      }
+
+      
       error_input = Pa_ReadStream(stream_input,recordsamples, FRAMES);
       if(error_input != paNoError && 0) goto error;
 
@@ -215,7 +224,7 @@ data* output_file(void)
     path_name = "data/";
     files = 0; 
     num = scandir(path_name, &namelist, 0, versionsort);
-    combination = (float*) malloc(sizeof(float)*819144*10);
+    combination = (float*) malloc(sizeof(float)*819144*11);
     data_struct = (data*) malloc(sizeof(data));
     data_struct->cursor = 0; 
     /* Intialization */
@@ -227,11 +236,11 @@ data* output_file(void)
     }
     else
     {
-      while(files<num-1)
+      while(files<num)
       {
         if(strcmp(namelist[files]->d_name,".") != 0 && strcmp(namelist[files]->d_name,".."))
         {
-          printf("%d, %s",files,namelist[files]->d_name);
+          printf("%d, %s\n",files,namelist[files]->d_name);
           strcpy(buff,path_name);
           strcat(buff,namelist[files]->d_name);
           sf = sf_open(buff,SFM_READ,&info);
@@ -260,6 +269,7 @@ data* output_file(void)
           }
           free(buf);
           counter++;
+
         }
         free(namelist[files]);
         files++;
