@@ -38,26 +38,26 @@
  * ISBN 0-521-43108-5
  * Sec.13.4 - Data Windowing
  */
-double
+float
 parzen (int i, int nn)
 {
-  return (1.0 - fabs (((double)i-0.5*(double)(nn-1))
-		      /(0.5*(double)(nn+1))));
+  return (1.0 - fabs (((float)i-0.5*(float)(nn-1))
+		      /(0.5*(float)(nn+1))));
 }
 
-double
+float
 welch (int i, int nn)
 {
-  return (1.0-(((double)i-0.5*(double)(nn-1))
-	       /(0.5*(double)(nn+1)))
-	  *(((double)i-0.5*(double)(nn-1))
-	    /(0.5*(double)(nn+1))));
+  return (1.0-(((float)i-0.5*(float)(nn-1))
+	       /(0.5*(float)(nn+1)))
+	  *(((float)i-0.5*(float)(nn-1))
+	    /(0.5*(float)(nn+1))));
 }
 
-double
+float
 hanning (int i, int nn)
 {
-  return ( 0.5 * (1.0 - cos (2.0*M_PI*(double)i/(double)(nn-1))) );
+  return ( 0.5 * (1.0 - cos (2.0*M_PI*(float)i/(float)(nn-1))) );
 }
 
 /* Reference: "Digital Filters and Signal Processing" 2nd Ed.
@@ -65,25 +65,25 @@ hanning (int i, int nn)
  * ISBN 0-89838-276-9
  * Sec.7.3 - Windows in Spectrum Analysis
  */
-double
+float
 hamming (int i, int nn)
 {
-  return ( 0.54 - 0.46 * cos (2.0*M_PI*(double)i/(double)(nn-1)) );
+  return ( 0.54 - 0.46 * cos (2.0*M_PI*(float)i/(float)(nn-1)) );
 }
 
-double
+float
 blackman (int i, int nn)
 {
-  return ( 0.42 - 0.5 * cos (2.0*M_PI*(double)i/(double)(nn-1))
-	  + 0.08 * cos (4.0*M_PI*(double)i/(double)(nn-1)) );
+  return ( 0.42 - 0.5 * cos (2.0*M_PI*(float)i/(float)(nn-1))
+	  + 0.08 * cos (4.0*M_PI*(float)i/(float)(nn-1)) );
 }
 
-double
+float
 steeper (int i, int nn)
 {
   return ( 0.375
-	  - 0.5 * cos (2.0*M_PI*(double)i/(double)(nn-1))
-	  + 0.125 * cos (4.0*M_PI*(double)i/(double)(nn-1)) );
+	  - 0.5 * cos (2.0*M_PI*(float)i/(float)(nn-1))
+	  + 0.125 * cos (4.0*M_PI*(float)i/(float)(nn-1)) );
 }
 
 /* apply window function to data[]
@@ -97,8 +97,8 @@ steeper (int i, int nn)
  *                6 : steeper 30-dB/octave rolloff window
  */
 void
-windowing (int n, const double *data, int flag_window, double scale,
-	   double *out)
+windowing (int n, const float *data, int flag_window, float scale,
+	   float *out)
 {
   int i;
   for (i = 0; i < n; i ++)
@@ -151,10 +151,10 @@ windowing (int n, const double *data, int flag_window, double scale,
  *  phs[len/2+1] : phase
  */
 void
-apply_FFT (int len, const double *data, int flag_window,
-	   fftw_plan plan, double *in, double *out,
-	   double scale,
-	   double *amp, double *phs)
+apply_FFT (int len, const float *data, int flag_window,
+	   fftw_plan plan, float *in, float *out,
+	   float scale,
+	   float *amp, float *phs)
 {
   int i;
 
@@ -183,10 +183,10 @@ apply_FFT (int len, const double *data, int flag_window,
  * OUTPUT
  *  density factor as RETURN VALUE
  */
-double
+float
 init_den (int n, char flag_window)
 {
-  double den;
+  float den;
   int i;
 
   den = 0.0;
@@ -226,7 +226,7 @@ init_den (int n, char flag_window)
 	}
     }
 
-  den *= (double)n;
+  den *= (float)n;
 
   return den;
 }
@@ -250,8 +250,8 @@ init_den (int n, char flag_window)
  *  p[(n+1)/2] : stored only n/2 data
  */
 void
-power_spectrum_fftw (int n, double *x, double *y, double *p,
-		     double den,
+power_spectrum_fftw (int n, float *x, float *y, float *p,
+		     float den,
 		     char flag_window,
 #ifdef FFTW2
 		     rfftw_plan plan)
@@ -259,7 +259,7 @@ power_spectrum_fftw (int n, double *x, double *y, double *p,
 		     fftw_plan plan)
 #endif // FFTW2
 {
-  static double maxamp = 2147483647.0; /* 2^32-1  */
+  static float maxamp = 2147483647.0; /* 2^32-1  */
 
   /* window */
   windowing (n, x, flag_window, maxamp, x);

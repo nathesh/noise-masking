@@ -21,12 +21,12 @@
 #define	_FFT_H_
 
 
-double parzen (int i, int nn);
-double welch (int i, int nn);
-double hanning (int i, int nn);
-double hamming (int i, int nn);
-double blackman (int i, int nn);
-double steeper (int i, int nn);
+float parzen (int i, int nn);
+float welch (int i, int nn);
+float hanning (int i, int nn);
+float hamming (int i, int nn);
+float blackman (int i, int nn);
+float steeper (int i, int nn);
 
 /* apply window function to data[]
  * INPUT
@@ -39,8 +39,8 @@ double steeper (int i, int nn);
  *                6 : steeper 30-dB/octave rolloff window
  */
 void
-windowing (int n, const double *data, int flag_window, double scale,
-	   double *out);
+windowing (int n, const float *data, int flag_window, float scale,
+	   float *out);
 void
 fprint_window_name (FILE *out, int flag_window);
 
@@ -57,10 +57,10 @@ fprint_window_name (FILE *out, int flag_window);
  *  phs[len/2+1] : phase
  */
 void
-apply_FFT (int len, const double *data, int flag_window,
-	   fftw_plan plan, double *in, double *out,
-	   double scale,
-	   double *amp, double *phs);
+apply_FFT (int len, const float *data, int flag_window,
+	   fftw_plan plan, float *in, float *out,
+	   float scale,
+	   float *amp, float *phs);
 
 
 /* prepare window for FFT
@@ -76,7 +76,7 @@ apply_FFT (int len, const double *data, int flag_window,
  * OUTPUT
  *  density factor as RETURN VALUE
  */
-double
+float
 init_den (int n, char flag_window);
 
 
@@ -101,14 +101,14 @@ init_den (int n, char flag_window);
 #ifdef FFTW2
 #include <rfftw.h>
 void
-power_spectrum_fftw (int n, double *x, double *y, double *p,
-		     double den,
+power_spectrum_fftw (int n, float *x, float *y, float *p,
+		     float den,
 		     char flag_window,
 		     rfftw_plan plan)
 #else // FFTW3
 void
-power_spectrum_fftw (int n, double *x, double *y, double *p,
-		     double den,
+power_spectrum_fftw (int n, float *x, float *y, float *p,
+		     float den,
 		     char flag_window,
 		     fftw_plan plan);
 #endif // !FFTW2
@@ -128,7 +128,7 @@ power_spectrum_fftw (int n, double *x, double *y, double *p,
  *  p[(n+1)/2] : subtracted power spectrum
  */
 void
-power_subtract_ave (int n, double *p, int m, double factor);
+power_subtract_ave (int n, float *p, int m, float factor);
 
 /* octave remover
  * INPUT
@@ -142,7 +142,7 @@ power_subtract_ave (int n, double *p, int m, double factor);
  *  p[(n+1)/2] : subtracted power spectrum
  */
 void
-power_subtract_octave (int n, double *p, double factor);
+power_subtract_octave (int n, float *p, float factor);
 
 
 #endif /* !_FFT_H_ */

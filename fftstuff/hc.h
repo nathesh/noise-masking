@@ -33,9 +33,9 @@
  *  amp [len/2+1] :
  *  phs [len/2+1] :
  */
-void HC_to_polar (long len, const double * freq,
+void HC_to_polar (long len, const float * freq,
 		  int conj,
-		  double * amp, double * phs);
+		  float * amp, float * phs);
 
 /* return angle (arg) of the complex number (freq(k),freq(len-k));
  * where (real,imag) = (cos(angle), sin(angle)).
@@ -51,9 +51,9 @@ void HC_to_polar (long len, const double * freq,
  *  phs  [len/2+1] := atan2 (+imag / real) for conj==0
  *                  = atan2 (-imag / real) for conj==1
  */
-void HC_to_polar2 (long len, const double * freq,
-		   int conj, double scale,
-		   double * amp2, double * phs);
+void HC_to_polar2 (long len, const float * freq,
+		   int conj, float scale,
+		   float * amp2, float * phs);
 
 /* return power (amp2) of the complex number (freq(k),freq(len-k));
  * where (real,imag) = (cos(angle), sin(angle)).
@@ -64,8 +64,8 @@ void HC_to_polar2 (long len, const double * freq,
  * OUTPUT
  *  amp2 [len/2+1] := (real^2 + imag^2) / scale
  */
-void HC_to_amp2 (long len, const double * freq, double scale,
-		 double * amp2);
+void HC_to_amp2 (long len, const float * freq, float scale,
+		 float * amp2);
 
 /* 
  * INPUT
@@ -86,9 +86,9 @@ void HC_to_amp2 (long len, const double * freq, double scale,
  *     note in this case that Y(0) is real but Y(N/2) is not.
  *  in either case, number of elements for the coefficients are N/2+1.
  */
-void polar_to_HC (long len, const double * amp, const double * phs,
+void polar_to_HC (long len, const float * amp, const float * phs,
 		  int conj,
-		  double * freq);
+		  float * freq);
 
 /* convert polar to HC with the scaling in freq domain
  * INPUT
@@ -101,32 +101,32 @@ void polar_to_HC (long len, const double * amp, const double * phs,
  * OUTPUT
  *  freq [len*2] :
  */
-void polar_to_HC_scale (long len, const double * amp, const double * phs,
+void polar_to_HC_scale (long len, const float * amp, const float * phs,
 			int conj, int scale,
-			double * freq);
+			float * freq);
 
 /* Z = X * Y, that is,
  * (rz + i iz) = (rx + i ix) * (ry + i iy)
  *             = (rx * ry - ix * iy) + i (rx * iy + ix * ry)
  */
-void HC_mul (long len, const double *x, const double *y,
-	     double *z);
+void HC_mul (long len, const float *x, const float *y,
+	     float *z);
 
 /* Z = X / Y, that is,
  * (rz + i iz) = (rx + i ix) / (ry + i iy)
  *             = (rx + i ix) * (ry - i iy) / (ry*ry + iy*iy)
  *             = (rx*ry + ix*iy + i (ix*ry - rx*iy)) / (ry*ry + iy*iy)
  */
-void HC_div (long len, const double *x, const double *y,
-	     double *z);
+void HC_div (long len, const float *x, const float *y,
+	     float *z);
 
-void HC_abs (long len, const double *x,
-	     double *z);
+void HC_abs (long len, const float *x,
+	     float *z);
 
 /* NOTE: y cannot be z!
  */
-void HC_puckette_lock (long len, const double *y,
-		       double *z);
+void HC_puckette_lock (long len, const float *y,
+		       float *z);
 
 /* Y[u_i] = X[t_i] (Y[u_{i-1}]/X[s_i]) / |Y[u_{i-1}]/X[s_i]|
  * Reference: M.Puckette (1995)
@@ -140,9 +140,9 @@ void HC_puckette_lock (long len, const double *y,
  *                you can use the same point f_out_old[] for this.
  */
 void
-HC_complex_phase_vocoder (int len, const double *fs, const double *ft,
-			  const double *f_out_old, 
-			  double *f_out);
+HC_complex_phase_vocoder (int len, const float *fs, const float *ft,
+			  const float *f_out_old, 
+			  float *f_out);
 
 
 #endif /* !_HC_H_ */

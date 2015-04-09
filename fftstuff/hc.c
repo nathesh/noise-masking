@@ -35,12 +35,12 @@
  *  amp [len/2+1] :
  *  phs [len/2+1] :
  */
-void HC_to_polar (long len, const double * freq,
+void HC_to_polar (long len, const float * freq,
 		  int conj,
-		  double * amp, double * phs)
+		  float * amp, float * phs)
 {
   int i;
-  double rl, im;
+  float rl, im;
 
   phs [0] = 0.0;
   amp [0] = sqrt (freq [0] * freq [0]);
@@ -80,12 +80,12 @@ void HC_to_polar (long len, const double * freq,
  *  phs  [len/2+1] := atan2 (+imag / real) for conj==0
  *                  = atan2 (-imag / real) for conj==1
  */
-void HC_to_polar2 (long len, const double * freq,
-		   int conj, double scale,
-		   double * amp2, double * phs)
+void HC_to_polar2 (long len, const float * freq,
+		   int conj, float scale,
+		   float * amp2, float * phs)
 {
   int i;
-  double rl, im;
+  float rl, im;
 
   phs [0] = 0.0;
   amp2 [0] = freq [0] * freq [0] / scale;
@@ -120,11 +120,11 @@ void HC_to_polar2 (long len, const double * freq,
  * OUTPUT
  *  amp2 [len/2+1] := (real^2 + imag^2) / scale
  */
-void HC_to_amp2 (long len, const double * freq, double scale,
-		 double * amp2)
+void HC_to_amp2 (long len, const float * freq, float scale,
+		 float * amp2)
 {
   int i;
-  double rl, im;
+  float rl, im;
 
   amp2 [0] = freq [0] * freq [0] / scale;
   for (i = 1; i < (len+1)/2; i ++)
@@ -158,12 +158,12 @@ void HC_to_amp2 (long len, const double * freq, double scale,
  *     note in this case that Y(0) is real but Y(N/2) is not.
  *  in either case, number of elements for the coefficients are N/2+1.
  */
-void polar_to_HC (long len, const double * amp, const double * phs,
+void polar_to_HC (long len, const float * amp, const float * phs,
 		  int conj,
-		  double * freq)
+		  float * freq)
 {
   int i;
-  double rl, im;
+  float rl, im;
 
   /* calc phase and amplitude (power) */
   freq [0] = amp [0];
@@ -192,12 +192,12 @@ void polar_to_HC (long len, const double * amp, const double * phs,
  * OUTPUT
  *  freq [len*scale] :
  */
-void polar_to_HC_scale (long len, const double * amp, const double * phs,
+void polar_to_HC_scale (long len, const float * amp, const float * phs,
 			int conj, int scale,
-			double * freq)
+			float * freq)
 {
   int i;
-  double rl, im;
+  float rl, im;
 
   // zero clear
   for (i = 0; i < len*scale; i ++)
@@ -226,12 +226,12 @@ void polar_to_HC_scale (long len, const double * amp, const double * phs,
  * (rz + i iz) = (rx + i ix) * (ry + i iy)
  *             = (rx * ry - ix * iy) + i (rx * iy + ix * ry)
  */
-void HC_mul (long len, const double *x, const double *y,
-	     double *z)
+void HC_mul (long len, const float *x, const float *y,
+	     float *z)
 {
   int i;
-  double rx, ix;
-  double ry, iy;
+  float rx, ix;
+  float ry, iy;
 
   /* calc phase and amplitude (power) */
   z [0] = x [0] * y [0];
@@ -255,13 +255,13 @@ void HC_mul (long len, const double *x, const double *y,
  *             = (rx + i ix) * (ry - i iy) / (ry*ry + iy*iy)
  *             = (rx*ry + ix*iy + i (ix*ry - rx*iy)) / (ry*ry + iy*iy)
  */
-void HC_div (long len, const double *x, const double *y,
-	     double *z)
+void HC_div (long len, const float *x, const float *y,
+	     float *z)
 {
   int i;
-  double rx, ix;
-  double ry, iy;
-  double den;
+  float rx, ix;
+  float ry, iy;
+  float den;
 
   /* calc phase and amplitude (power) */
   z [0] = x [0] / y [0];
@@ -281,11 +281,11 @@ void HC_div (long len, const double *x, const double *y,
     }
 }
 
-void HC_abs (long len, const double *x,
-	     double *z)
+void HC_abs (long len, const float *x,
+	     float *z)
 {
   int i;
-  double rx, ix;
+  float rx, ix;
 
   /* calc phase and amplitude (power) */
   z [0] = fabs (x [0]);
@@ -304,8 +304,8 @@ void HC_abs (long len, const double *x,
 
 /* NOTE: y cannot be z!
  */
-void HC_puckette_lock (long len, const double *y,
-		       double *z)
+void HC_puckette_lock (long len, const float *y,
+		       float *z)
 {
   int k;
 
@@ -343,25 +343,25 @@ void HC_puckette_lock (long len, const double *y,
  *                you can use the same point f_out_old[] for this.
  */
 void
-HC_complex_phase_vocoder (int len, const double *fs, const double *ft,
-			  const double *f_out_old, 
-			  double *f_out)
+HC_complex_phase_vocoder (int len, const float *fs, const float *ft,
+			  const float *f_out_old, 
+			  float *f_out)
 {
-  static double *tmp1 = NULL;
-  static double *tmp2 = NULL;
+  static float *tmp1 = NULL;
+  static float *tmp2 = NULL;
   static int n0 = 0;
   if (tmp1 == NULL)
     {
-      tmp1 = (double *)malloc (sizeof (double) * len);
-      tmp2 = (double *)malloc (sizeof (double) * len);
+      tmp1 = (float *)malloc (sizeof (float) * len);
+      tmp2 = (float *)malloc (sizeof (float) * len);
       CHECK_MALLOC (tmp1, "HC_complex_phase_vocoder");
       CHECK_MALLOC (tmp2, "HC_complex_phase_vocoder");
       n0 = len;
     }
   else if (n0 < len)
     {
-      tmp1 = (double *)realloc (tmp1, sizeof (double) * len);
-      tmp2 = (double *)realloc (tmp2, sizeof (double) * len);
+      tmp1 = (float *)realloc (tmp1, sizeof (float) * len);
+      tmp2 = (float *)realloc (tmp2, sizeof (float) * len);
       CHECK_MALLOC (tmp1, "HC_complex_phase_vocoder");
       CHECK_MALLOC (tmp2, "HC_complex_phase_vocoder");
       n0 = len;
