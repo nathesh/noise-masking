@@ -179,7 +179,12 @@ int read_write_streams(void)
 	/* Read and Write */
    while(1)
    {
-   	  //printf("HERE!\n");
+   	/****************************************************************/
+    // Okay so i am using fft.c for the power_spectrum_fftw function which uses
+    // hc.c for the hc_2_amp function
+    // I think the problem has to do with the fftw plan or something see if you can figure it out
+    /****************************************************************/
+      //printf("HERE!\n");
       //error_output = Pa_WriteStream(stream_output,outputsamples, 441000);
       if( error_output  != paNoError && 0) goto error_o;
       //printf("HEREReading\n");
