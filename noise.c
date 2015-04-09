@@ -1,4 +1,5 @@
 #include "../include/portaudio.h"
+#include "./memory-check.h"
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -61,6 +62,17 @@ int main(void)
 	return 0; 
 
 }
+void inputsignal(fftw_complex* signal,float* Record, int numsamples) {
+  int k;  
+  for (k = 0; k < numsamples; k++) {
+        
+        signal[k][REAL] = Record[k];
+
+        signal[k][IMAG] = 0;
+    }
+}
+
+
 
 int read_write_streams(void)
 {
@@ -68,8 +80,10 @@ int read_write_streams(void)
 	PaStreamParameters input, output; 
 	PaStream *stream_input,  *stream_output; 
 	PaError error_input,error_output;
-	float *recordsamples;
-	int i,totalframes,numsamples,numbytes; 
+	float *recordsamples; //is recordsamples stereo if yes how is it formatted we need to average the channels in inputsignal!!!!!
+  fftw_complex *in, *out, *powerspec;
+  float den;
+  int i,totalframes,numsamples,numbytes; 
 	data* struct_data;
 	/* Declaration */
 	
@@ -84,12 +98,17 @@ int read_write_streams(void)
 	numsamples    = CHANNELS*totalframes;
 	numbytes  	  = numsamples * sizeof(float);
 	recordsamples = (float*) malloc(numbytes);
-	struct_data->cursor = 0;
+  CHECK_MALLOC(recordsamples,"read_write_streams");
+	in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * numsamples);
+	out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * numsamples);
+  CHECK_MALLOC(in,"read_write_streams");
+  CHECK_MALLOC(out,"read_write_streams");
+  struct_data->cursor = 0;
 	struct_data->num_frames = 441000;
 	for (i = 0; i < numsamples; i++)
 	{
 		recordsamples[i] = 0;
-		
+    //should I initialize fftw_complex in out???? 
 	}
 	
 
@@ -166,10 +185,16 @@ int read_write_streams(void)
       //printf("HEREReading\n");
       error_input = Pa_ReadStream(stream_input,recordsamples, FRAMES);
       if(error_input != paNoError && 0) goto error;
-      sleep(2);
+      inputsignal(in, recordsamples, numsamples);
+      power_spectrum_fftw(numsamples,in,out,powerspec,den,4);
+      //print data
+      for(i=0; i<numsamples/2+1; i++){
+    //     printf("%d\n",powerspec[i]);
+      } 
    }
    free(recordsamples);
-	/* Read and Write */
+   free(in);
+   free(out);
 error:
 
     Pa_Terminate();

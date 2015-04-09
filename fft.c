@@ -250,7 +250,7 @@ init_den (int n, char flag_window)
  *  p[(n+1)/2] : stored only n/2 data
  */
 void
-power_spectrum_fftw (int n, float *x, float *y, float *p,
+power_spectrum_fftw (int n, fftw_complex *x, fftw_complex *y, float *p,
 		     float den,
 		     char flag_window,
 #ifdef FFTW2
