@@ -18,7 +18,7 @@
  */
 #include <math.h>
 #include <stdlib.h> // malloc()
-
+#include <fftw3.h>
 #include <stdio.h> // fprintf()
 #include "memory-check.h" // CHECK_MALLOC() macro
 
@@ -120,22 +120,21 @@ void HC_to_polar2 (long len, const float * freq,
  * OUTPUT
  *  amp2 [len/2+1] := (real^2 + imag^2) / scale
  */
-void HC_to_amp2 (long len, const float * freq, float scale,
-		 float * amp2)
+void HC_to_amp2 (int len, fftw_complex *freq, float scale,
+		 float* amp2)
 {
   int i;
   float rl, im;
-
-  amp2 [0] = freq [0] * freq [0] / scale;
-  for (i = 1; i < (len+1)/2; i ++)
+  printf("heer");
+  for (i = 0; i < (len+1)/2; i ++)
     {
-      rl = freq [i];
-      im = freq [len - i];
+      rl = freq[i][0];
+      im = freq[i][1];
       amp2 [i] = (rl * rl + im * im)  / scale;
     }
   if (len%2 == 0)
     {
-      amp2 [len/2] = freq [len/2] * freq [len/2] / scale;
+      amp2[len/2] = freq[len/2][0]* freq[len/2][0] / scale;
     }
 }
 

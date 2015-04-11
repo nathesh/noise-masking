@@ -19,7 +19,7 @@
  */
 #ifndef	_HC_H_
 #define	_HC_H_
-
+#include <fftw3.h>
 
 /* return angle (arg) of the complex number (freq(k),freq(len-k));
  * where (real,imag) = (cos(angle), sin(angle)).
@@ -64,7 +64,7 @@ void HC_to_polar2 (long len, const float * freq,
  * OUTPUT
  *  amp2 [len/2+1] := (real^2 + imag^2) / scale
  */
-void HC_to_amp2 (long len, const float * freq, float scale,
+void HC_to_amp2 (int len, fftw_complex * freq, float scale,
 		 float * amp2);
 
 /* 

@@ -97,8 +97,7 @@ steeper (int i, int nn)
  *                6 : steeper 30-dB/octave rolloff window
  */
 void
-windowing (int n, const float *data, int flag_window, float scale,
-	   float *out)
+windowing (int n, fftw_complex *data, int flag_window, float scale)
 {
   int i;
   for (i = 0; i < n; i ++)
@@ -106,33 +105,33 @@ windowing (int n, const float *data, int flag_window, float scale,
       switch (flag_window)
 	{
 	case 1: // parzen window
-	  out [i] = data [i] * parzen (i, n) / scale;
+	  data[i][0] = data[i][0] * parzen (i, n) / scale;
 	  break;
 
 	case 2: // welch window
-	  out [i] = data [i] * welch (i, n) / scale;
+	  data[i][0] = data[i][0] * welch (i, n) / scale;
 	  break;
 
 	case 3: // hanning window
-	  out [i] = data [i] * hanning (i, n) / scale;
+	  data[i][0] = data [i][0] * hanning (i, n) / scale;
 	  break;
 
 	case 4: // hamming window
-	  out [i] = data [i] * hamming (i, n) / scale;
+	  data[i][0] = data [i][0] * hamming (i, n) / scale;
 	  break;
 
 	case 5: // blackman window
-	  out [i] = data [i] * blackman (i, n) / scale;
+	  data[i][0] = data [i][0] * blackman (i, n) / scale;
 	  break;
 
 	case 6: // steeper 30-dB/octave rolloff window
-	  out [i] = data [i] * steeper (i, n) / scale;
+	  data[i][0] = data [i][0] * steeper (i, n) / scale;
 	  break;
 
 	default:
 	  fprintf (stderr, "invalid flag_window\n");
 	case 0: // square (no window)
-	  out [i] = data [i] / scale;
+	  data[i][0] = data [i][0] / scale;
 	  break;
 	}
     }
@@ -151,14 +150,14 @@ windowing (int n, const float *data, int flag_window, float scale,
  *  phs[len/2+1] : phase
  */
 void
-apply_FFT (int len, const float *data, int flag_window,
-	   fftw_plan plan, float *in, float *out,
+apply_FFT (int len, fftw_complex *data, int flag_window,
+	   fftw_plan plan, fftw_complex *in, fftw_complex *out,
 	   float scale,
 	   float *amp, float *phs)
 {
   int i;
 
-  windowing (len, data, flag_window, 1.0, in);
+  windowing (len, data, flag_window, 1.0);
   fftw_execute (plan); // FFT: in[] -> out[]
   HC_to_polar (len, out, 0, amp, phs); // freq[] -> (amp, phs)
 
@@ -173,7 +172,7 @@ apply_FFT (int len, const float *data, int flag_window,
 /* prepare window for FFT
  * INPUT
  *  n : # of samples for FFT
- *  flag_window : 0 : no-window (default -- that is, other than 1 ~ 6)
+ *  flag_w/indow : 0 : no-window (default -- that is, other than 1 ~ 6)
  *                1 : parzen window
  *                2 : welch window
  *                3 : hanning window
@@ -250,27 +249,19 @@ init_den (int n, char flag_window)
  *  p[(n+1)/2] : stored only n/2 data
  */
 void
-power_spectrum_fftw (int n, fftw_complex *x, fftw_complex *y, float *p,
+power_spectrum_fftw (int n, fftw_complex *x, fftw_complex *y, float *p, 
 		     float den,
 		     char flag_window,
-#ifdef FFTW2
-		     rfftw_plan plan)
-#else // FFTW3
 		     fftw_plan plan)
-#endif // FFTW2
 {
   static float maxamp = 2147483647.0; /* 2^32-1  */
 
   /* window */
-  windowing (n, x, flag_window, maxamp, x);
+  windowing (n, x, flag_window, maxamp);
 
 /* FFTW library  */
-#ifdef FFTW2
-  rfftw_one (plan, x, y);
-#else // FFTW3
   fftw_execute (plan); // x[] -> y[]
-#endif
-
+  printf("lol");
   HC_to_amp2 (n, y, den, p);
 }
 

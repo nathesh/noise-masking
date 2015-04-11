@@ -19,7 +19,7 @@
  */
 #ifndef	_FFT_H_
 #define	_FFT_H_
-
+#include <fftw3.h>
 
 float parzen (int i, int nn);
 float welch (int i, int nn);
@@ -39,8 +39,7 @@ float steeper (int i, int nn);
  *                6 : steeper 30-dB/octave rolloff window
  */
 void
-windowing (int n, const float *data, int flag_window, float scale,
-	   float *out);
+windowing (int n, fftw_complex *data, int flag_window, float scale);
 void
 fprint_window_name (FILE *out, int flag_window);
 
@@ -98,20 +97,11 @@ init_den (int n, char flag_window);
  *  y[] : fourier transform of x[]
  *  p[(n+1)/2] : stored only n/2 data
  */
-#ifdef FFTW2
-#include <rfftw.h>
 void
-power_spectrum_fftw (int n, float *x, float *y, float *p,
-		     float den,
-		     char flag_window,
-		     rfftw_plan plan)
-#else // FFTW3
-void
-power_spectrum_fftw (int n, float *x, float *y, float *p,
+power_spectrum_fftw (int n, fftw_complex *x, fftw_complex *y, float *p,
 		     float den,
 		     char flag_window,
 		     fftw_plan plan);
-#endif // !FFTW2
 
 
 /* subtract average from the power spectrum

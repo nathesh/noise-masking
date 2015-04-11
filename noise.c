@@ -1,5 +1,8 @@
 #include "../include/portaudio.h"
 #include "./memory-check.h"
+#include "fft.h"
+#include "hc.h"
+#include <fftw3.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -66,10 +69,11 @@ void inputsignal(fftw_complex* signal,float* Record, int numsamples) {
   int k;  
   for (k = 0; k < numsamples; k++) {
         
-        signal[k][REAL] = Record[k];
+        signal[k][0] = Record[k];
 
-        signal[k][IMAG] = 0;
-    }
+        signal[k][1] = 0;
+  		//	printf("%f \n",signal[k][0]);
+	}
 }
 
 
@@ -80,8 +84,9 @@ int read_write_streams(void)
 	PaStreamParameters input, output; 
 	PaStream *stream_input,  *stream_output; 
 	PaError error_input,error_output;
-	float *recordsamples; //is recordsamples stereo if yes how is it formatted we need to average the channels in inputsignal!!!!!
-  fftw_complex *in, *out, *powerspec;
+	float *recordsamples,*powerspec; //is recordsamples stereo if yes how is it formatted we need to average the channels in inputsignal!!!!!
+  fftw_complex *in, *out;
+  fftw_plan plan;
   float den;
   int i,totalframes,numsamples,numbytes; 
 	data* struct_data;
@@ -99,16 +104,18 @@ int read_write_streams(void)
 	numbytes  	  = numsamples * sizeof(float);
 	recordsamples = (float*) malloc(numbytes);
   CHECK_MALLOC(recordsamples,"read_write_streams");
-	in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * numsamples);
+	powerspec = (float*) malloc(numbytes); //malloc too much memory but i think that cool we will figure it out
+  in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * numsamples);
 	out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * numsamples);
   CHECK_MALLOC(in,"read_write_streams");
   CHECK_MALLOC(out,"read_write_streams");
+  plan = fftw_plan_dft_1d(numsamples, in, out, FFTW_FORWARD, FFTW_MEASURE);
   struct_data->cursor = 0;
 	struct_data->num_frames = 441000;
-	for (i = 0; i < numsamples; i++)
+  for (i = 0; i < numsamples; i++)
 	{
 		recordsamples[i] = 0;
-    //should I initialize fftw_complex in out???? 
+    powerspec[i] = 0;
 	}
 	
 
@@ -184,17 +191,17 @@ int read_write_streams(void)
     // hc.c for the hc_2_amp function
     // I think the problem has to do with the fftw plan or something see if you can figure it out
     /****************************************************************/
-      //printf("HERE!\n");
       //error_output = Pa_WriteStream(stream_output,outputsamples, 441000);
       if( error_output  != paNoError && 0) goto error_o;
       //printf("HEREReading\n");
       error_input = Pa_ReadStream(stream_input,recordsamples, FRAMES);
       if(error_input != paNoError && 0) goto error;
+      //do FFT PROCESSING
       inputsignal(in, recordsamples, numsamples);
-      power_spectrum_fftw(numsamples,in,out,powerspec,den,4);
+      power_spectrum_fftw(numsamples,in,out,powerspec,den,4, plan);
       //print data
-      for(i=0; i<numsamples/2+1; i++){
-    //     printf("%d\n",powerspec[i]);
+      for(i=0; i<numsamples/2; i++){
+         printf("%f\n",powerspec[i]);
       } 
    }
    free(recordsamples);
