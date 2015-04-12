@@ -78,9 +78,11 @@ apply_FFT (int len, const float *data, int flag_window,
 float
 init_den (int n, char flag_window);
 
+/* Apply A-weighting */
+void 
+A_weighting(int n, float* weights, fftw_complex* in);
 
-
-/* calc power spectrum of real data x[n]
+/* calc power spectrum of real data x[n] and weight with A weighting
  * INPUT
  *  n : # of data in x
  *  x[] : data
@@ -98,7 +100,8 @@ init_den (int n, char flag_window);
  *  p[(n+1)/2] : stored only n/2 data
  */
 void
-power_spectrum_fftw (int n, fftw_complex *x, fftw_complex *y, float *p,
+weighted_power_spectrum_fftw (int n, fftw_complex *x, fftw_complex *y, float *p,
+		     float *weights,
 		     float den,
 		     char flag_window,
 		     fftw_plan plan);

@@ -230,6 +230,14 @@ init_den (int n, char flag_window)
   return den;
 }
 
+void A_weighting(int n, float* weights, fftw_complex* in)
+{
+	int i;
+	for(i=0; i<n; i++){
+	  in[i][0] = weights[i] * in[i][0];
+	  in[i][1] = weights[i] * in[i][1];
+	}
+}
 
 /* calc power spectrum of real data x[n]
  * INPUT
@@ -249,7 +257,8 @@ init_den (int n, char flag_window)
  *  p[(n+1)/2] : stored only n/2 data
  */
 void
-power_spectrum_fftw (int n, fftw_complex *x, fftw_complex *y, float *p, 
+weighted_power_spectrum_fftw (int n, fftw_complex *x, fftw_complex *y, float *p, 
+		     float *weights,
 		     float den,
 		     char flag_window,
 		     fftw_plan plan)
@@ -261,7 +270,9 @@ power_spectrum_fftw (int n, fftw_complex *x, fftw_complex *y, float *p,
 
 /* FFTW library  */
   fftw_execute (plan); // x[] -> y[]
-  printf("lol");
+/* apply A weighting */ 
+  A_weighting(n,weights,y);
+/* get amplitude */
   HC_to_amp2 (n, y, den, p);
 }
 

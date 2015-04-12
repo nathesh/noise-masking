@@ -10,10 +10,12 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <math.h>
 #define FRAMES (1024)
 #define CHANNELS (2)
 #define SAMPLE_RATE (8000)
 #define CHECK_OVERFLOW  (0)
+#define NUM_BANDS (10)
 int read_write_streams(void);
 float* output_file(void);
 typedef struct 
@@ -63,8 +65,10 @@ int main(void)
 
 
 	return 0; 
-
 }
+
+
+
 void inputsignal(fftw_complex* signal,float* Record, int numsamples) {
   int k;  
   for (k = 0; k < numsamples; k++) {
@@ -76,18 +80,38 @@ void inputsignal(fftw_complex* signal,float* Record, int numsamples) {
 	}
 }
 
+void A_compute_coeff(int n, float* A, float fres) {
+	int i;
+	int freq; //or float???? lose precision....
+	float Y1 = pow(12200,2);
+	float Y2 = pow(20.6,2);
+	float Y3 = pow(107.7,2);
+	float Y4 = pow(737.9,2);
+	for (i=0; i < n; i++) {
+       freq = pow(i * fres,2);
+       A[i] = (Y1 *pow(freq,4))/ 
+              ((Y1 + freq) * (Y2 + freq) *  sqrt((Y3 + freq) * (Y4 + freq)));
+	//		 printf("freq:%3d  %12f \n",freq,A[i]);
+		}
+}
 
 
+void compute_band_weights(int n, float* in, float fres,float* out)
+{
+	//compute average over each octave band 
+	//map values from 0-1 
+	//print out weights for debuggin
+}
 int read_write_streams(void)
 {
 	/* Declaration */ 
 	PaStreamParameters input, output; 
 	PaStream *stream_input,  *stream_output; 
 	PaError error_input,error_output;
-	float *recordsamples,*powerspec; //is recordsamples stereo if yes how is it formatted we need to average the channels in inputsignal!!!!!
+	float *recordsamples,*powerspec, *A, *weights; //is recordsamples stereo if yes how is it formatted we need to average the channels in inputsignal!!!!!
   fftw_complex *in, *out;
   fftw_plan plan;
-  float den;
+  float den, fres;
   int i,totalframes,numsamples,numbytes; 
 	data* struct_data;
 	/* Declaration */
@@ -99,12 +123,17 @@ int read_write_streams(void)
 	/* Read the wav */
 
 	/* Intialization */
-	totalframes   = 5*SAMPLE_RATE;
-	numsamples    = CHANNELS*totalframes;
-	numbytes  	  = numsamples * sizeof(float);
+	totalframes   = FRAMES;//5*SAMPLE_RATE; why????
+	numsamples    = CHANNELS*FRAMES; //why totalframes is 5*sample rate change to totalframes if wrong 
+	fres = 2*M_PI*numsamples/SAMPLE_RATE;
+  numbytes  	  = numsamples * sizeof(float);
 	recordsamples = (float*) malloc(numbytes);
   CHECK_MALLOC(recordsamples,"read_write_streams");
 	powerspec = (float*) malloc(numbytes); //malloc too much memory but i think that cool we will figure it out
+  CHECK_MALLOC(powerspec,"read_write_streams");	
+	A = (float*) malloc(numbytes);
+  CHECK_MALLOC(A,"read_write_streams");
+	weights = (float*)malloc(sizeof(float)*NUM_BANDS);
   in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * numsamples);
 	out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * numsamples);
   CHECK_MALLOC(in,"read_write_streams");
@@ -112,12 +141,15 @@ int read_write_streams(void)
   plan = fftw_plan_dft_1d(numsamples, in, out, FFTW_FORWARD, FFTW_MEASURE);
   struct_data->cursor = 0;
 	struct_data->num_frames = 441000;
-  for (i = 0; i < numsamples; i++)
-	{
+  for (i = 0; i < numsamples; i++){
 		recordsamples[i] = 0;
     powerspec[i] = 0;
+    A[i] = 0;
 	}
-	
+  for (i = 0; i < NUM_BANDS; i++){
+    weights[i] = 1;  //init weights to 1 equal volume 
+	}
+	A_compute_coeff(numsamples,A,fres);
 
 	/* Port Audio Intialization */
 	error_input = Pa_Initialize();
@@ -198,10 +230,11 @@ int read_write_streams(void)
       if(error_input != paNoError && 0) goto error;
       //do FFT PROCESSING
       inputsignal(in, recordsamples, numsamples);
-      power_spectrum_fftw(numsamples,in,out,powerspec,den,4, plan);
+      weighted_power_spectrum_fftw(numsamples,in,out,powerspec,A,den,4, plan);
+      compute_band_weights(numsamples,powerspec,fres,weights);
       //print data
       for(i=0; i<numsamples/2; i++){
-         printf("%f\n",powerspec[i]);
+         printf("freq:%f value:%f\n",fres*i,out[i][0]);
       } 
    }
    free(recordsamples);
