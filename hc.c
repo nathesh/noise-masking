@@ -125,16 +125,16 @@ void HC_to_amp2 (int len, fftw_complex *freq, float scale,
 {
   int i;
   float rl, im;
-  printf("heer");
   for (i = 0; i < (len+1)/2; i ++)
     {
       rl = freq[i][0];
       im = freq[i][1];
-      amp2 [i] = sqrt((rl * rl + im * im))  / scale;
+      amp2 [i] = 10*log10((rl * rl + im * im) / len);
+    //  printf("%f\n",amp2[i]);
     }
   if (len%2 == 0)
     {
-      amp2[len/2] = sqrt(freq[len/2][0]* freq[len/2][0]) / scale;
+      amp2[len/2] = 10*log10(freq[len/2][0]* freq[len/2][0] / len);
     }
 }
 

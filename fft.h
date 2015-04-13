@@ -80,7 +80,7 @@ init_den (int n, char flag_window);
 
 /* Apply A-weighting */
 void 
-A_weighting(int n, float* weights, fftw_complex* in);
+A_weighting(int n, float* weights, float* in);
 
 /* calc power spectrum of real data x[n] and weight with A weighting
  * INPUT

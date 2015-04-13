@@ -100,7 +100,7 @@ void
 windowing (int n, fftw_complex *data, int flag_window, float scale)
 {
   int i;
-  for (i = 0; i < n; i ++)
+  for (i = 0; i < n/2; i ++)
     {
       switch (flag_window)
 	{
@@ -117,8 +117,8 @@ windowing (int n, fftw_complex *data, int flag_window, float scale)
 	  break;
 
 	case 4: // hamming window
-	  data[i][0] = data [i][0] * hamming (i, n) / scale;
-	  break;
+	  data[i][0] = data [i][0] * hamming (i, n);
+    break;
 
 	case 5: // blackman window
 	  data[i][0] = data [i][0] * blackman (i, n) / scale;
@@ -189,7 +189,7 @@ init_den (int n, char flag_window)
   int i;
 
   den = 0.0;
-  for (i = 0; i < n; i ++)
+  for (i = 0; i < n/2; i ++)
     {
       switch (flag_window)
 	{
@@ -230,12 +230,12 @@ init_den (int n, char flag_window)
   return den;
 }
 
-void A_weighting(int n, float* weights, fftw_complex* in)
+void A_weighting(int n, float* weights, float* in)
 {
 	int i;
 	for(i=0; i<n; i++){
-	  in[i][0] = weights[i] * in[i][0];
-	  in[i][1] = weights[i] * in[i][1];
+  //  printf("%f\n",weights[i]);
+	  in[i] = weights[i] + in[i];
 	}
 }
 
@@ -270,9 +270,18 @@ weighted_power_spectrum_fftw (int n, fftw_complex *x, fftw_complex *y, float *p,
 
 /* FFTW library  */
   fftw_execute (plan); // x[] -> y[]
+  int i;    
 /* apply A weighting */ 
-  A_weighting(n,weights,y);
-/* get amplitude */
-  HC_to_amp2 (n, y, den, p);
+  for(i=0; i<n/2; i++){
+       //  fftw_execute(plan);
+     //  printf("index:%d freq:%f value:%fdBA\n",i,7.8125*(float)i,20*log10(pow(y[i][0],2)+pow(y[i][1],2)));
+      } 
+/* get amplitude in dB*/
+   HC_to_amp2 (n, y, den, p);
+  // A_weighting(n,weights,y);
+  for(i=0; i<n/2; i++){
+       //  fftw_execute(plan);
+       printf("index:%d freq:%f value:%fdB\n",i,7.8125*(float)i,p[i]);
+      } 
 }
 

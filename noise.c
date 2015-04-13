@@ -68,50 +68,73 @@ int main(void)
 }
 
 
-
+//converts microphone data to mono and converts to fftw_complex type 
 void inputsignal(fftw_complex* signal,float* Record, int numsamples) {
   int k;  
+ // int i; //counter
+ //i dont know if this will work if numsamples is odd....
   for (k = 0; k < numsamples; k++) {
-        
-        signal[k][0] = Record[k];
-
-        signal[k][1] = 0;
+       if(CHANNELS == 2){
+         if(k%2 == 0){
+           signal[k/2][0] = (Record[k]+Record[k+1])/2;
+        //   printf("%f,\n",Record[k]);
+           signal[k/2][1] = 0;
+         }
+       }
+         else{
+           signal[k][0] = Record[k];
+      //     printf("%f,\n",Record[k]);
+           signal[k][1] = 0;
+       } 
   		//	printf("%f \n",signal[k][0]);
 	}
 }
 
 void A_compute_coeff(int n, float* A, float fres) {
 	int i;
-	int freq; //or float???? lose precision....
+	int freq, freq1; //or float???? lose precision....
 	float Y1 = pow(12200,2);
 	float Y2 = pow(20.6,2);
 	float Y3 = pow(107.7,2);
 	float Y4 = pow(737.9,2);
-	for (i=0; i < n; i++) {
+	for (i=0; i < n; i++) 
+{      freq1 = fres*i;
        freq = pow(i * fres,2);
-       A[i] = (Y1 *pow(freq,4))/ 
-              ((Y1 + freq) * (Y2 + freq) *  sqrt((Y3 + freq) * (Y4 + freq)));
-	//		 printf("freq:%3d  %12f \n",freq,A[i]);
+       A[i] =20*log10((Y1 *pow(freq,2))/ 
+              ((Y1 + freq) * (Y2 + freq) *  sqrt((Y3 + freq) * (Y4 + freq))))+2;
+      // printf("freq:%3d  %12f \n",freq1,A[i]);
 		}
 }
 
+void apply_weighting(int n, float* weights, float* in)
+{
+	int i;
+	for(i=0; i<n; i++){
+  //  printf("%f\n",weights[i]);
+	  in[i] = weights[i] + in[i];
+	}
+}
 
 void compute_band_weights(int n, float* in, float fres,float* out)
 {
+  //in is PSD data 
+  //fres * idx = frequency ithink????
+  //out is array of 10 values (NUM_BANDS) 
+  //n  
 	//compute average over each octave band 
 	//map values from 0-1 
 	//print out weights for debuggin
 }
+
 int read_write_streams(void)
 {
 	/* Declaration */ 
 	PaStreamParameters input, output; 
 	PaStream *stream_input,  *stream_output; 
 	PaError error_input,error_output;
-	float *recordsamples,*powerspec, *A, *weights; //is recordsamples stereo if yes how is it formatted we need to average the channels in inputsignal!!!!!
+  float den, fres, *recordsamples,*powerspec, *A, *weights; 
   fftw_complex *in, *out;
   fftw_plan plan;
-  float den, fres;
   int i,totalframes,numsamples,numbytes; 
 	data* struct_data;
 	/* Declaration */
@@ -123,9 +146,9 @@ int read_write_streams(void)
 	/* Read the wav */
 
 	/* Intialization */
-	totalframes   = FRAMES;//5*SAMPLE_RATE; why????
-	numsamples    = CHANNELS*FRAMES; //why totalframes is 5*sample rate change to totalframes if wrong 
-	fres = 2*M_PI*numsamples/SAMPLE_RATE;
+	totalframes   = CHANNELS*FRAMES;//5*SAMPLE_RATE; why????
+	numsamples    = FRAMES; //why totalframes is 5*sample rate change to totalframes if wrong 
+	fres =(float) SAMPLE_RATE/FRAMES/2;
   numbytes  	  = numsamples * sizeof(float);
 	recordsamples = (float*) malloc(numbytes);
   CHECK_MALLOC(recordsamples,"read_write_streams");
@@ -229,12 +252,13 @@ int read_write_streams(void)
       error_input = Pa_ReadStream(stream_input,recordsamples, FRAMES);
       if(error_input != paNoError && 0) goto error;
       //do FFT PROCESSING
-      inputsignal(in, recordsamples, numsamples);
+      inputsignal(in, recordsamples, CHANNELS*numsamples); //converts to fftw_complex and averages stereo to mono
       weighted_power_spectrum_fftw(numsamples,in,out,powerspec,A,den,4, plan);
       compute_band_weights(numsamples,powerspec,fres,weights);
       //print data
-      for(i=0; i<numsamples/2; i++){
-         printf("freq:%f value:%f\n",fres*i,out[i][0]);
+      for(i=0; i<numsamples; i++){
+       //  fftw_execute(plan);
+     //    printf("index:%d freq:%f value:%f\n",i,fres*(float)i,powerspec[i]);
       } 
    }
    free(recordsamples);
