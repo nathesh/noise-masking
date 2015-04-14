@@ -50,7 +50,7 @@ static int output_callback(const void *inputBuffer, void *outputBuffer,
     {
     	// pick in the 3/4 of the frames so cuts and randomize the location to not make it seem repetative  
        
-    	 data_struct->cursor = data_struct->num_frames/2;  
+    	 data_struct->cursor = 3*data_struct->num_frames/2;  
        //return  paComplete;
     }
 
