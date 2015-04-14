@@ -15,6 +15,7 @@
 #define CHANNELS (2)
 #define SAMPLE_RATE (8000)
 #define CHECK_OVERFLOW  (0)
+#define LINEAR (1) //0 for octave bands
 #define NUM_BANDS (10)
 int read_write_streams(void);
 float* output_file(void);
@@ -115,7 +116,7 @@ void apply_weighting(int n, float* weights, float* in)
 	}
 }
 
-void compute_band_weights(int n, float* in, float fres,float* out)
+void compute_band_weights(int n, float* in, float fres,float* out, float* bands)
 {
   //in is PSD data 
   //fres * idx = frequency ithink????
@@ -124,7 +125,35 @@ void compute_band_weights(int n, float* in, float fres,float* out)
 	//compute average over each octave band 
 	//map values from 0-1 
 	//print out weights for debuggin
+  int i,k,count;
+  count = 0;
+ // int bands = (SAMPLE_RATE/2)/NUM_BANDS
+//go through and find indices of bands
+//calculate average in each band  
+  i = 1;
+  for (k = 0; k < n; k++) {
+      if ((bands[i-1] <= (k*fres)) && ((k*fres) <= bands[i])) {
+         out[i-1] += in[k];
+         count ++;
+      } 
+      else if (LINEAR && ((k*fres)<bands[0])) {
+        // if between -0 80 in linear bands ignor 
+      }   
+      else {
+         out[i-1] /= count;
+        // printf("%d\n",count);
+         count = 0;
+         i ++; 
+      }
+  }
+  for (i =0 ; i < NUM_BANDS; i++){
+  //   printf("bands:%f average:%f\n",bands[i],out[i]);
+  }
+
+//normalize to 0-1 and add up to 1...
+  
 }
+
 
 int read_write_streams(void)
 {
@@ -132,7 +161,7 @@ int read_write_streams(void)
 	PaStreamParameters input, output; 
 	PaStream *stream_input,  *stream_output; 
 	PaError error_input,error_output;
-  float den, fres, *recordsamples,*powerspec, *A, *weights; 
+  float den, fres, *recordsamples,*powerspec, *A, *weights, *bands; 
   fftw_complex *in, *out;
   fftw_plan plan;
   int i,totalframes,numsamples,numbytes; 
@@ -156,7 +185,10 @@ int read_write_streams(void)
   CHECK_MALLOC(powerspec,"read_write_streams");	
 	A = (float*) malloc(numbytes);
   CHECK_MALLOC(A,"read_write_streams");
-	weights = (float*)malloc(sizeof(float)*NUM_BANDS);
+	weights = (float*)malloc(sizeof(float)*NUM_BANDS); //final computed band weights
+  CHECK_MALLOC(weights,"read_write_streams");
+	bands = (float*)malloc(sizeof(float)*NUM_BANDS);  //bands specified to compute band weights
+  CHECK_MALLOC(bands,"read_write_streams");
   in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * numsamples);
 	out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * numsamples);
   CHECK_MALLOC(in,"read_write_streams");
@@ -172,6 +204,15 @@ int read_write_streams(void)
   for (i = 0; i < NUM_BANDS; i++){
     weights[i] = 1;  //init weights to 1 equal volume 
 	}
+  if (LINEAR == 1){
+     bands[0] = 80;
+ 	   for (i = 1; i <= NUM_BANDS; i++) {
+         bands[i] = i*(SAMPLE_RATE/2)/NUM_BANDS;
+     }
+  }
+  else{
+  //needs to be donei for octave bands
+  }
 	A_compute_coeff(numsamples,A,fres);
 
 	/* Port Audio Intialization */
@@ -254,7 +295,7 @@ int read_write_streams(void)
       //do FFT PROCESSING
       inputsignal(in, recordsamples, CHANNELS*numsamples); //converts to fftw_complex and averages stereo to mono
       weighted_power_spectrum_fftw(numsamples,in,out,powerspec,A,den,4, plan);
-      compute_band_weights(numsamples,powerspec,fres,weights);
+      compute_band_weights(numsamples,powerspec,fres,weights,bands);
       //print data
       for(i=0; i<numsamples; i++){
        //  fftw_execute(plan);
@@ -264,6 +305,7 @@ int read_write_streams(void)
    free(recordsamples);
    free(in);
    free(out);
+  //clean up other stuff fft and other malloced items
 error:
 
     Pa_Terminate();
