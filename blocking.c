@@ -51,7 +51,7 @@ static int output_callback(const void *inputBuffer, void *outputBuffer,
     	// pick in the 3/4 of the frames so cuts and randomize the location to not make it seem repetative  
        
     	 data_struct->cursor = data_struct->num_frames/2;  
-       //return  paComplete;
+       return  paComplete;
     }
 
   }
@@ -74,9 +74,10 @@ int read_write_streams(void)
 	PaStreamParameters input, output; 
 	PaStream *stream_input,  *stream_output; 
 	PaError error_input,error_output;
-	float *recordsamples,summation;
-	int i,totalframes,numsamples,numbytes,y; 
+	float *recordsamples,summation, *outputsamples;
+	int i,totalframes,numsamples,numbytes,y,frame; 
 	data* struct_data;
+   
 	/* Declaration */
 	
 	struct_data = (data*) malloc(sizeof(data));
@@ -91,21 +92,22 @@ int read_write_streams(void)
 	numsamples    = CHANNELS*totalframes;
 	numbytes  	  = numsamples * sizeof(float);
 	recordsamples = (float*) malloc(numbytes);
+  outputsamples = (float*) malloc(sizeof(float)*struct_data->num_frames*2);
 	for (i = 0; i < numsamples; i++)
 	{
 		recordsamples[i] = 0;
-		
+		outputsamples[i] = 0;
 	}
-	  for(i = 0;i<struct_data->num_frames*2;i++) // is accessing num_frames bad?
+	
+  for(i = 0;i<struct_data->num_frames*2;i++) // is accessing num_frames bad?
   {
     summation = 0;
     for(y = 0; y<11;y++)
     {
       summation += struct_data->data[y*struct_data->num_frames*2+i];
     }
-    struct_data->data[i] = summation;
+    outputsamples[i] = summation;
   }
-
 	/* Port Audio Intialization */
 	error_input = Pa_Initialize();
 	if (error_input != paNoError)
@@ -159,8 +161,8 @@ int read_write_streams(void)
            		44100,
             	paFramesPerBufferUnspecified,
             	paClipOff,      
-            	output_callback, 
-            	struct_data);
+            	NULL, 
+            	NULL);
 	if (error_output != paNoError)
 	{
 		goto error; 
@@ -171,15 +173,16 @@ int read_write_streams(void)
 	/* Intialization */
 
 	/* Read and Write */
-   while( (Pa_IsStreamActive(stream_output ) ) == 1)
+   error_output = Pa_WriteStream(stream_output,outputsamples+3*struct_data->num_frames/2, struct_data->num_frames/2);
+   struct_data->cursor = 3*struct_data->num_frames/2; 
+   if( error_output  != paNoError && 0) goto error_o;
+   while(1)
    {
    	  //printf("HERE!\n");
-      //error_output = Pa_WriteStream(stream_output,outputsamples, 441000);
-      if( error_output  != paNoError && 0) goto error_o;
+      //printf("%d\n", Pa_GetStreamWriteAvailable(stream_output));
+      error_output = Pa_WriteStream(stream_output,outputsamples+3*struct_data->num_frames/2, struct_data->num_frames/2);
       //printf("HEREReading\n");
-      //struct_data->data = NULL; 
 
-      
       error_input = Pa_ReadStream(stream_input,recordsamples, FRAMES);
       if(error_input != paNoError && 0) goto error;
 

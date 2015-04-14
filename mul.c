@@ -36,9 +36,10 @@ static int output_callback(const void *inputBuffer, void *outputBuffer,
    float* out        = (float*)outputBuffer;
    float buffer; 
    data* data_struct = (data*) userData;
-   int i,y,z;
+   int i,y;
    /* Intialization */
 
+  copy_cat(data_struct,out); 
   for (i = 0; i < framesPerBuffer; i++)
   {
     buffer = 0; 
@@ -47,12 +48,12 @@ static int output_callback(const void *inputBuffer, void *outputBuffer,
       //*out++ = data_struct->data[data_struct->cursor++];
       //*out++ = data_struct->data[data_struct->cursor++];
 
-      for(y=0;y<10;y++)
+      for(y=0;y<11;y++)
       {
         buffer +=data_struct->data[data_struct->cursor+data_struct->num_frames*2*y];
 
       }
-      *out++ = buffer*.3;
+      *out++ = buffer/10;
      	data_struct->cursor++;
      	
     }
@@ -215,7 +216,7 @@ data* output_file(void)
     path_name = "data/";
     files = 0; 
     num = scandir(path_name, &namelist, 0, versionsort);
-    combination = (float*) malloc(sizeof(float)*819144*10);
+    combination = (float*) malloc(sizeof(float)*819144*11);
     data_struct = (data*) malloc(sizeof(data));
     data_struct->cursor = 0; 
     /* Intialization */
@@ -227,7 +228,7 @@ data* output_file(void)
     }
     else
     {
-      while(files<num-1)
+      while(files<num)
       {
         if(strcmp(namelist[files]->d_name,".") != 0 && strcmp(namelist[files]->d_name,".."))
         {
