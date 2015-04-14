@@ -1,6 +1,6 @@
 CC=gcc
-CFLAGS=-lsndfile -lfftw3 -lm -pthread -lportaudio -Wall -D_gnu_source
-SOURCES=noise.c fft.c hc.c
+CFLAGS=-lsndfile -lfftw3 -lm -pthread -lportaudio  -D_GNU_SOURCE
+SOURCES=summation.c fft.c hc.c
 EXECUTABLE=mask
 
 all:

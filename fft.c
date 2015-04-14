@@ -137,37 +137,6 @@ windowing (int n, fftw_complex *data, int flag_window, float scale)
     }
 }
 
-/* apply FFT with the window and return amplitude and phase
- * this is a wrapper mainly for phase vocoder process
- * INPUT
- *  len : FFT length
- *  data[len] : data to analyze
- *  flag_window : window type
- *  plan, in[len], out[len] : for FFTW3
- *  scale : amplitude scale factor
- * OUTPUT
- *  amp[len/2+1] : amplitude multiplied by the factor "scale" above
- *  phs[len/2+1] : phase
- */
-void
-apply_FFT (int len, fftw_complex *data, int flag_window,
-	   fftw_plan plan, fftw_complex *in, fftw_complex *out,
-	   float scale,
-	   float *amp, float *phs)
-{
-  int i;
-
-  windowing (len, data, flag_window, 1.0);
-  fftw_execute (plan); // FFT: in[] -> out[]
-  HC_to_polar (len, out, 0, amp, phs); // freq[] -> (amp, phs)
-
-  // some scaling
-  for (i = 0; i < (len/2)+1; i ++)
-    {
-      amp [i] /= scale;
-    }
-}
-
 
 /* prepare window for FFT
  * INPUT

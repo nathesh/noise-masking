@@ -1,4 +1,4 @@
-#include "../include/portaudio.h"
+#include "portaudio.h"
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -7,7 +7,11 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <string.h>
-
+#include "./memory-check.h"
+#include "fft.h"
+#include "hc.h"
+#include <fftw3.h>
+#include <math.h>
 typedef struct 
 {
   float* data;
@@ -124,14 +128,14 @@ void compute_band_weights(int n, float* in, float fres,float* out, float* bands)
   i = 1;
   for (k = 0; k < n; k++) {
       if ((bands[i-1] <= (k*fres)) && ((k*fres) <= bands[i])) {
-         out[i-1] += in[k];
+         //out[i-1] += in[k];
          count ++;
       } 
       else if (LINEAR && ((k*fres)<bands[0])) {
         // if between -0 80 in linear bands ignor 
       }   
       else {
-         out[i-1] /= count;
+       //  out[i-1] /= count;
         // printf("%d\n",count);
          count = 0;
          i ++; 
@@ -164,7 +168,7 @@ int read_write_streams(void)
 	PaError error_input,error_output;
 	float den, fres, *recordsamples,*powerspec, *A, *weights, *bands, summation;
 	int i,totalframes,numsamples,numbytes,y; //y might cause problems 
-	ftw_complex *in, *out;
+	fftw_complex *in, *out;
   fftw_plan plan;data* struct_data;
 	/* Declaration */
 	
@@ -217,7 +221,7 @@ int read_write_streams(void)
   for(i = 0;i<struct_data->num_frames*2;i++) // is accessing num_frames bad?
   {
     summation = 0;
-    for(y = 0; y<11;y++)
+    for(y = 0; y <11;y++)
     {
       summation += struct_data->data[y*struct_data->num_frames*2+i];
     }
@@ -294,11 +298,15 @@ int read_write_streams(void)
    {
    	  //printf("HERE!\n");
       //error_output = Pa_WriteStream(stream_output,outputsamples, 441000);
+
       if( error_output  != paNoError && 0) goto error_o;
- //do FFT PROCESSING
+      error_input = Pa_ReadStream(stream_input,recordsamples, FRAMES);
+      if(error_input != paNoError && 0) goto error;
+       //do FFT PROCESSING
       inputsignal(in, recordsamples, CHANNELS*numsamples); //converts to fftw_complex and averages stereo to mono
       weighted_power_spectrum_fftw(numsamples,in,out,powerspec,A,den,4, plan);
       compute_band_weights(numsamples,powerspec,fres,weights,bands);
+      //struct_data->data[i]
       //print data
       /*
       for(i=0; i<numsamples; i++){
