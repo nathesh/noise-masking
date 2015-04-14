@@ -281,7 +281,7 @@ weighted_power_spectrum_fftw (int n, fftw_complex *x, fftw_complex *y, float *p,
    A_weighting(n,weights,p);
   for(i=0; i<n/2; i++){
        //  fftw_execute(plan);
-       printf("index:%d freq:%f value:%fdB\n",i,7.8125*(float)i,p[i]);
+    //   printf("index:%d freq:%f value:%fdB\n",i,7.8125*(float)i,p[i]);
       } 
 }
 

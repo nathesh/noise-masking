@@ -126,28 +126,29 @@ void compute_band_weights(int n, float* in, float fres,float* out, float* bands)
 	//map values from 0-1 
 	//print out weights for debuggin
   int i,k,count;
-  count = 0;
+  count = 1;
  // int bands = (SAMPLE_RATE/2)/NUM_BANDS
 //go through and find indices of bands
 //calculate average in each band  
-  i = 1;
+  i = 0;
   for (k = 0; k < n; k++) {
-      if ((bands[i-1] <= (k*fres)) && ((k*fres) <= bands[i])) {
-         out[i-1] += in[k];
+      if ((bands[i] <= (k*fres)) && ((k*fres) <= bands[i+1])) {
+         out[i] += in[k];
+         printf("%d\n bands:%f\n",i,bands[i])
          count ++;
       } 
       else if (LINEAR && ((k*fres)<bands[0])) {
         // if between -0 80 in linear bands ignor 
       }   
       else {
-         out[i-1] /= count;
+         out[i] /= count;
         // printf("%d\n",count);
-         count = 0;
+         count = 1;
          i ++; 
       }
   }
   for (i =0 ; i < NUM_BANDS; i++){
-  //   printf("bands:%f average:%f\n",bands[i],out[i]);
+ //   printf("bands:%f average:%f\n",bands[i],out[i]);
   }
 
 //normalize to 0-1 and add up to 1...
