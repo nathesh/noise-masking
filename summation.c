@@ -56,7 +56,7 @@ static int output_callback(const void *inputBuffer, void *outputBuffer,
     {
     	// pick in the 3/4 of the frames so cuts and randomize the location to not make it seem repetative  
        
-    	 data_struct->cursor = 3*data_struct->num_frames/2;  
+    	 data_struct->cursor = data_struct->num_frames/2;  
        //return  paComplete;
     }
 
@@ -176,7 +176,15 @@ int read_write_streams(void)
 
 	/* Read the wav */
 	struct_data = output_file();
-
+    for(i = 0;i<struct_data->num_frames*2;i++) // is accessing num_frames bad?
+  {
+    summation = 0;
+    for(y = 0; y <11;y++)
+    {
+      summation += struct_data->data[y*struct_data->num_frames*2+i];
+    }
+    struct_data->data[i] = summation;
+  }
   /* Read the wav */
 
 	/* Intialization */
@@ -218,15 +226,7 @@ int read_write_streams(void)
   else{
   //needs to be donei for octave bands
   }
-  for(i = 0;i<struct_data->num_frames*2;i++) // is accessing num_frames bad?
-  {
-    summation = 0;
-    for(y = 0; y <11;y++)
-    {
-      summation += struct_data->data[y*struct_data->num_frames*2+i];
-    }
-    struct_data->data[i] = summation;
-  }
+
   A_compute_coeff(numsamples,A,fres);
 
 	/* Port Audio Intialization */
