@@ -14,7 +14,7 @@
 #include <math.h>
 typedef struct 
 {
-  float* data;
+  float* data,*noise;
   int cursor;
   int num_frames;
   int channels; 
@@ -56,7 +56,7 @@ static int output_callback(const void *inputBuffer, void *outputBuffer,
     {
     	// pick in the 3/4 of the frames so cuts and randomize the location to not make it seem repetative  
        
-    	 data_struct->cursor = data_struct->num_frames/2;  
+    	 data_struct->cursor = 3*data_struct->num_frames/4;  
        //return  paComplete;
     }
 
@@ -176,7 +176,7 @@ int read_write_streams(void)
 
 	/* Read the wav */
 	struct_data = output_file();
-    for(i = 0;i<struct_data->num_frames*2;i++) // is accessing num_frames bad?
+  for(i = 0;i<struct_data->num_frames*2;i++) // is accessing num_frames bad?
   {
     summation = 0;
     for(y = 0; y <11;y++)
@@ -306,6 +306,17 @@ int read_write_streams(void)
       inputsignal(in, recordsamples, CHANNELS*numsamples); //converts to fftw_complex and averages stereo to mono
       weighted_power_spectrum_fftw(numsamples,in,out,powerspec,A,den,4, plan);
       compute_band_weights(numsamples,powerspec,fres,weights,bands);
+      for(i = 0;i<struct_data->num_frames*2;i++) // is accessing num_frames bad?
+      {
+        summation = 0;
+        for(y = 0; y <11;y++)
+        {
+          summation += struct_data->noise[y*struct_data->num_frames*2+i];
+          if(y < 10)
+            summation *= 1;
+        }
+        struct_data->data[i] = summation;
+      }
       //struct_data->data[i]
       //print data
       /*
@@ -342,7 +353,7 @@ data* output_file(void)
     SNDFILE *sf;
     SF_INFO info;
     int num, num_items,f,sr,c,files,x,counter;
-    float *buf,*combination;
+    float *buf,*combination, *noise_1;
     char *path_name,buff[128]; 
     struct dirent **namelist;
     data* data_struct; 
@@ -354,6 +365,7 @@ data* output_file(void)
     files = 0; 
     num = scandir(path_name, &namelist, 0, versionsort);
     combination = (float*) malloc(sizeof(float)*819144*11);
+    noise_1 = (float*) malloc(sizeof(float)*819144*11);
     data_struct = (data*) malloc(sizeof(data));
     data_struct->cursor = 0; 
     /* Intialization */
@@ -394,7 +406,7 @@ data* output_file(void)
           for(x=0;x<num_items;x++)
           {
             combination[counter*num_items+x] = buf[x];
-
+            noise_1[counter*num_items+x] = buf[x];
           }
           free(buf);
           counter++;
@@ -409,6 +421,7 @@ data* output_file(void)
     
     sf_close(sf);   
     data_struct->data  = combination; 
+    data_struct->noise = noise_1;
     return data_struct;
 }
 
