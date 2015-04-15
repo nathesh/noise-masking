@@ -12,6 +12,7 @@
 #include "hc.h"
 #include <fftw3.h>
 #include <math.h>
+
 typedef struct 
 {
   float* data,*noise;
@@ -29,6 +30,7 @@ typedef struct
 #define CHECK_OVERFLOW  (0)
 #define LINEAR (1) //0 for octave bands
 #define NUM_BANDS (10)
+
 int read_write_streams(void);
 data* output_file(void);
 
@@ -98,54 +100,57 @@ void A_compute_coeff(int n, float* A, float fres) {
        freq = pow(i * fres,2);
        A[i] =20*log10((Y1 *pow(freq,2))/ 
               ((Y1 + freq) * (Y2 + freq) *  sqrt((Y3 + freq) * (Y4 + freq))))+2;
-      // printf("freq:%3d  %12f \n",freq1,A[i]);
     }
 }
 
-void apply_weighting(int n, float* weights, float* in)
-{
-  int i;
-  for(i=0; i<n; i++){
-  //  printf("%f\n",weights[i]);
-    in[i] = weights[i] + in[i];
-  }
-}
 
-void compute_band_weights(int n, float* in, float fres,float* out, float* bands)
+void compute_band_weights(int n, float* p, float fres,float* out, float* bands)
 {
   //in is PSD data 
-  //fres * idx = frequency ithink????
   //out is array of 10 values (NUM_BANDS) 
-  //n  
-  //compute average over each octave band 
   //map values from 0-1 
-  //print out weights for debuggin
-  int i,k,count;
-  count = 0;
- // int bands = (SAMPLE_RATE/2)/NUM_BANDS
-//go through and find indices of bands
-//calculate average in each band  
-  i = 1;
-  for (k = 0; k < n; k++) {
-      if ((bands[i-1] <= (k*fres)) && ((k*fres) <= bands[i])) {
-         //out[i-1] += in[k];
-         count ++;
+  int i,k;
+  float sum,avg;
+  sum = 0;
+  i   = 0;
+  avg = 0;
+//calculate running average in each band  
+  for (k = 0; k < n/2; k++) {
+      if ((bands[i] <= (k*fres)) && ((k*fres) <= bands[i+1])) {
+         out[i] += p[k];
+         out[i] /= 2;
       } 
-      else if (LINEAR && ((k*fres)<bands[0])) {
+      else if ((LINEAR && ((k*fres)<bands[0])) || (!LINEAR && ((k*fres)<bands[0]))) {
         // if between -0 80 in linear bands ignor 
       }   
+      else if (bands[i] > SAMPLE_RATE/2 ){
+         break;
+      }
       else {
-       //  out[i-1] /= count;
-        // printf("%d\n",count);
-         count = 0;
          i ++; 
       }
-  }
-  for (i =0 ; i < NUM_BANDS; i++){
-  //   printf("bands:%f average:%f\n",bands[i],out[i]);
-  }
+}
 
-//normalize to 0-1 and add up to 1...
+//calculate normalized weights don't add bands that arent measured (ie weight = 1)
+//maybe set weights = to avg of weights in bands that arent measured....
+  for (k = 0; k < NUM_BANDS; k++) {
+      if (out[k] != 1){
+         sum += out[k]; 
+      }
+  }
+  for (k = 0; k < NUM_BANDS; k++) {
+      if (out[k] != 1){
+         out[k] /= sum; 
+         avg += out[k];
+      }
+  }
+//bands that are not measured set equal to avg of weights....
+  for (k = 0; k < NUM_BANDS; k++) {
+      if (out[k] == 1){
+         out[k] = avg;
+      }
+//      printf("bands:%f average:%f\n",bands[k],out[k]);
+  }
   
 }
 
@@ -190,7 +195,7 @@ int read_write_streams(void)
 	/* Intialization */
   totalframes   = CHANNELS*FRAMES;//5*SAMPLE_RATE; why????
   numsamples    = FRAMES; //why totalframes is 5*sample rate change to totalframes if wrong 
-  fres          = (float) SAMPLE_RATE/FRAMES/2;
+  fres          = (float) SAMPLE_RATE/FRAMES;
   numbytes      = numsamples * sizeof(float);
   recordsamples = (float*) malloc(numbytes);
   CHECK_MALLOC(recordsamples,"read_write_streams");
@@ -224,8 +229,17 @@ int read_write_streams(void)
      }
   }
   else{
-  //needs to be donei for octave bands
-  }
+     bands[0] = 60;
+     bands[1] = 125;
+     bands[2] = 250;
+     bands[3] = 500;
+     bands[4] = 1000;
+     bands[5] = 2000;
+     bands[6] = 4000;
+     bands[7] = 8000;
+     bands[8] = 11000;
+     bands[9] = 22000; 
+ }
 
   A_compute_coeff(numsamples,A,fres);
 
@@ -305,6 +319,11 @@ int read_write_streams(void)
        //do FFT PROCESSING
       inputsignal(in, recordsamples, CHANNELS*numsamples); //converts to fftw_complex and averages stereo to mono
       weighted_power_spectrum_fftw(numsamples,in,out,powerspec,A,den,4, plan);
+      for(i=0; i<numsamples/2; i++){
+       
+      //   printf("index:%d freq:%f value:%f\n",i,fres*(float)i,powerspec[i]);
+      } 
+  //    printf("here\n");
       compute_band_weights(numsamples,powerspec,fres,weights,bands);
       for(i = 0;i<struct_data->num_frames*2;i++) // is accessing num_frames bad?
       {
@@ -319,12 +338,8 @@ int read_write_streams(void)
       }
       //struct_data->data[i]
       //print data
-      /*
-      for(i=0; i<numsamples; i++){
-       
-     //    printf("index:%d freq:%f value:%f\n",i,fres*(float)i,powerspec[i]);
-      } 
-      */
+      
+      
    }
    free(recordsamples);
    free(in);

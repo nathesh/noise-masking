@@ -240,17 +240,13 @@ weighted_power_spectrum_fftw (int n, fftw_complex *x, fftw_complex *y, float *p,
 /* FFTW library  */
   fftw_execute (plan); // x[] -> y[]
   int i;    
-/* apply A weighting */ 
-  for(i=0; i<n/2; i++){
-       //  fftw_execute(plan);
-     //  printf("index:%d freq:%f value:%fdBA\n",i,7.8125*(float)i,20*log10(pow(y[i][0],2)+pow(y[i][1],2)));
-      } 
 /* get amplitude in dB*/
    HC_to_amp2 (n, y, den, p);
+/* apply A weighting */ 
    A_weighting(n,weights,p);
   for(i=0; i<n/2; i++){
        //  fftw_execute(plan);
-       printf("index:%d freq:%f value:%fdB\n",i,7.8125*(float)i,p[i]);
+    //   printf("index:%d freq:%f value:%fdB\n",i,7.8125*(float)i,p[i]);
       } 
 }
 
