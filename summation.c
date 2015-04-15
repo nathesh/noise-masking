@@ -58,7 +58,7 @@ static int output_callback(const void *inputBuffer, void *outputBuffer,
     {
     	// pick in the 3/4 of the frames so cuts and randomize the location to not make it seem repetative  
        
-    	 data_struct->cursor = 3*data_struct->num_frames/4;  
+    	 data_struct->cursor = 3*data_struct->num_frames/2+100;  
        //return  paComplete;
     }
 
@@ -118,7 +118,7 @@ void compute_band_weights(int n, float* p, float fres,float* out, float* bands)
   for (k = 0; k < n/2; k++) {
       if ((bands[i] <= (k*fres)) && ((k*fres) <= bands[i+1])) {
          out[i] += p[k];
-         out[i] /= 2;
+        // out[i] /= 2;
       } 
       else if ((LINEAR && ((k*fres)<bands[0])) || (!LINEAR && ((k*fres)<bands[0]))) {
         // if between -0 80 in linear bands ignor 
@@ -147,9 +147,9 @@ void compute_band_weights(int n, float* p, float fres,float* out, float* bands)
 //bands that are not measured set equal to avg of weights....
   for (k = 0; k < NUM_BANDS; k++) {
       if (out[k] == 1){
-         out[k] = avg;
+         out[k] = 1/NUM_BANDS;
       }
-//      printf("bands:%f average:%f\n",bands[k],out[k]);
+      printf("bands:%f average:%f\n",bands[k],out[k]);
   }
   
 }
@@ -332,7 +332,10 @@ int read_write_streams(void)
         {
           summation += struct_data->noise[y*struct_data->num_frames*2+i];
           if(y < 10)
-            summation *= 1;
+            summation *= 1+weights[y];
+
+          else
+            summation *= 1+ 1/NUM_BANDS;
         }
         struct_data->data[i] = summation;
       }
