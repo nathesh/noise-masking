@@ -24,12 +24,16 @@ typedef struct
   // need to add the 10 bands 
 } data;
 
-#define FRAMES (1024)
+#define FRAMES (256)
 #define CHANNELS (2)
 #define SAMPLE_RATE (8000)
 #define CHECK_OVERFLOW  (0)
 #define LINEAR (1) //0 for octave bands
 #define NUM_BANDS (10)
+#define max(a,b) \
+   ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a > _b ? _a : _b; })
 
 int read_write_streams(void);
 data* output_file(void);
@@ -110,14 +114,18 @@ void compute_band_weights(int n, float* p, float fres,float* out, float* bands)
   //out is array of 10 values (NUM_BANDS) 
   //map values from 0-1 
   int i,k;
-  float sum,avg;
-  sum = 0;
+  float maxVal,sum,avg;
+  maxVal = -200;
   i   = 0;
   avg = 0;
+  sum = 0;
+
 //calculate running average in each band  
   for (k = 0; k < n/2; k++) {
       if ((bands[i] <= (k*fres)) && ((k*fres) <= bands[i+1])) {
-         out[i] += p[k];
+         maxVal = max(maxVal,p[k]);
+       // printf("%f",maxVal);
+          out[i] = maxVal;
         // out[i] /= 2;
       } 
       else if ((LINEAR && ((k*fres)<bands[0])) || (!LINEAR && ((k*fres)<bands[0]))) {
@@ -131,25 +139,29 @@ void compute_band_weights(int n, float* p, float fres,float* out, float* bands)
       }
 }
 
-//calculate normalized weights don't add bands that arent measured (ie weight = 1)
+//scalculate normalized weights don't add bands that arent measured (ie weight = 1)
 //maybe set weights = to avg of weights in bands that arent measured....
-  for (k = 0; k < NUM_BANDS; k++) {
-      if (out[k] != 1){
-         sum += out[k]; 
+  for (i = 0; i < NUM_BANDS; i++) {
+      if (out[i] != 1){
+         sum += out[i];
       }
   }
-  for (k = 0; k < NUM_BANDS; k++) {
-      if (out[k] != 1){
-         out[k] /= sum; 
-         avg += out[k];
+  for (i = 0; i < NUM_BANDS; i++) {
+      if (out[i] != 1){
+         out[i] /= sum; 
       }
   }
+
 //bands that are not measured set equal to avg of weights....
-  for (k = 0; k < NUM_BANDS; k++) {
-      if (out[k] == 1){
-         out[k] = 1/NUM_BANDS;
+  for (i = 0; i < NUM_BANDS; i++) {
+      if (out[i] == 1){
+         out[i] = 1/NUM_BANDS;
       }
-      printf("bands:%f average:%f\n",bands[k],out[k]);
+     else{
+         maxVal = max(out[i],maxVal);
+         printf("bands:%f maxval:%f\n",bands[i],maxVal); 
+}
+      //printf("bands:%f average:%f\n",bands[i],out[i]);
   }
   
 }
@@ -381,7 +393,7 @@ data* output_file(void)
     counter = 0;
     path_name = "data/";
     files = 0; 
-    num = scandir(path_name, &namelist, 0, versionsort);
+    num = scandir(path_name, &namelist, 0, alphasort);
     combination = (float*) malloc(sizeof(float)*819144*11);
     noise_1 = (float*) malloc(sizeof(float)*819144*11);
     data_struct = (data*) malloc(sizeof(data));
