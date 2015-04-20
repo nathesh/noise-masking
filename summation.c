@@ -344,10 +344,10 @@ int read_write_streams(void)
         {
           summation += struct_data->noise[y*struct_data->num_frames*2+i];
           if(y < 10)
-            summation *= 1+weights[y];
+            summation *= 1;//+weights[y];
 
           else
-            summation *= 1+ 1/NUM_BANDS;
+            summation *= 1;//+ 1/NUM_BANDS;
         }
         struct_data->data[i] = summation;
       }
