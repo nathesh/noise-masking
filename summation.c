@@ -125,7 +125,6 @@ void compute_band_weights(int n, float* p, float fres,float* out, float* bands)
       if ((bands[i] <= (k*fres)) && ((k*fres) <= bands[i+1])) {
          maxVal = max(maxVal,p[k]);
        // printf("%f",maxVal);
-          out[i] = maxVal;
         // out[i] /= 2;
       } 
       else if ((LINEAR && ((k*fres)<bands[0])) || (!LINEAR && ((k*fres)<bands[0]))) {
@@ -135,7 +134,9 @@ void compute_band_weights(int n, float* p, float fres,float* out, float* bands)
          break;
       }
       else {
-         i ++; 
+         out[i] = maxVal;
+         maxVal = -200;
+          i ++; 
       }
 }
 
@@ -148,18 +149,24 @@ void compute_band_weights(int n, float* p, float fres,float* out, float* bands)
   }
   for (i = 0; i < NUM_BANDS; i++) {
       if (out[i] != 1){
+         out[i] /= sum;  
+      }
+    /* if ((out[i] != 1)&&(out[i]<0)){
          out[i] /= sum; 
       }
+      else if((out[i] != 1)&&(out[i]>0)){
+         out[i] /= -1*sum;
+      }*/
   }
 
 //bands that are not measured set equal to avg of weights....
   for (i = 0; i < NUM_BANDS; i++) {
       if (out[i] == 1){
-         out[i] = 1/NUM_BANDS;
+    //     out[i] = 1/NUM_BANDS;
       }
      else{
-         maxVal = max(out[i],maxVal);
-         printf("bands:%f maxval:%f\n",bands[i],maxVal); 
+       //  maxVal = max(out[i],maxVal);
+         printf("bands:%f maxval:%f\n",bands[i],out[i]); 
 }
       //printf("bands:%f average:%f\n",bands[i],out[i]);
   }
@@ -344,10 +351,10 @@ int read_write_streams(void)
         {
           summation += struct_data->noise[y*struct_data->num_frames*2+i];
           if(y < 10)
-            summation *= 1;//+weights[y];
+            summation *= weights[y];
 
           else
-            summation *= 1;//+ 1/NUM_BANDS;
+            summation *= 1/NUM_BANDS;
         }
         struct_data->data[i] = summation;
       }
