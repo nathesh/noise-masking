@@ -28,7 +28,7 @@ typedef struct
 #define CHANNELS (2)
 #define SAMPLE_RATE (8000)
 #define CHECK_OVERFLOW  (0)
-#define LINEAR (1) //0 for octave bands
+#define LINEAR (1) //0 for octave NUM_BANDS
 #define NUM_BANDS (10)
 #define max(a,b) \
    ({ __typeof__ (a) _a = (a); \
