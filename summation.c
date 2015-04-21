@@ -347,7 +347,7 @@ int read_write_streams(void)
       weighted_power_spectrum_fftw(numsamples,in,out,powerspec,A,den,4, plan);
       for(i=0; i<numsamples/2; i++){
        
-      //   printf("index:%d freq:%f value:%f\n",i,fres*(float)i,powerspec[i]);
+        printf("index:%d freq:%f value:%f\n",i,fres*(float)i,powerspec[i]);
       } 
   //    printf("here\n");
       compute_band_weights(numsamples,powerspec,fres,weights,bands);
@@ -360,14 +360,15 @@ int read_write_streams(void)
           summation += struct_data->noise[y*struct_data->num_frames*2+i];
           if(y < 10)
           {
+            //printf("Before weighting: % 1.3f, weighting: %1.3f, After Weighting: % 1.3f\n" ,summation,weights[y],summation*weights[y]);
             summation *=  weights[y];
-            //printf("%f\n",weights[y]);
+            
           }
           else
             summation *= 1;///NUM_BANDS;
         }
          
-        struct_data->data[i] = summation;
+          struct_data->data[i] = summation;
       }
       //struct_data->data[i]
       //print data
