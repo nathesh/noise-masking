@@ -56,13 +56,19 @@ static int output_callback(const void *inputBuffer, void *outputBuffer,
     if(data_struct->cursor < data_struct->num_frames*data_struct->channels)
     {
       *out++ = data_struct->data[data_struct->cursor++];
+       //printf("%f\n",out[i]);
       *out++ = data_struct->data[data_struct->cursor++];   
+       //printf("%f\n",out[i+1]);
     }  
     else
     {
     	// pick in the 3/4 of the frames so cuts and randomize the location to not make it seem repetative  
        
-    	 data_struct->cursor = 3*data_struct->num_frames/2+100;  
+    	 data_struct->cursor = 3*data_struct->num_frames/2;  
+       *out++ = data_struct->data[data_struct->cursor++];
+       //printf("%f\n",out[i]);
+       *out++ = data_struct->data[data_struct->cursor++];   
+       //printf("%f\n",out[i+1]);
        //return  paComplete;
     }
 
@@ -166,7 +172,7 @@ void compute_band_weights(int n, float* p, float fres,float* out, float* bands)
       }
      else{
        //  maxVal = max(out[i],maxVal);
-         printf("bands:%f maxval:%f\n",bands[i],out[i]); 
+        // printf("bands:%f maxval:%f\n",bands[i],out[i]); 
 }
       //printf("bands:%f average:%f\n",bands[i],out[i]);
   }
@@ -327,6 +333,7 @@ int read_write_streams(void)
 	/* Intialization */
 
 	/* Read and Write */
+   //sleep(100);  
    while( (Pa_IsStreamActive(stream_output ) ) == 1)
    {
    	  //printf("HERE!\n");
@@ -344,18 +351,22 @@ int read_write_streams(void)
       } 
   //    printf("here\n");
       compute_band_weights(numsamples,powerspec,fres,weights,bands);
-      for(i = 0;i<struct_data->num_frames*2;i++) // is accessing num_frames bad?
+      //sleep(156);
+      for(i = 0;i<struct_data->num_frames*2;i++) // is accessing num_frames bandsd?
       {
         summation = 0;
         for(y = 0; y <11;y++)
         {
           summation += struct_data->noise[y*struct_data->num_frames*2+i];
           if(y < 10)
-            summation *= weights[y];
-
+          {
+            summation *=  weights[y];
+            //printf("%f\n",weights[y]);
+          }
           else
-            summation *= 1/NUM_BANDS;
+            summation *= 1;///NUM_BANDS;
         }
+         
         struct_data->data[i] = summation;
       }
       //struct_data->data[i]
