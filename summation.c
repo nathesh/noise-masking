@@ -171,8 +171,8 @@ void compute_band_weights(int n, float* p, float fres,float* out, float* bands)
     //     out[i] = 1/NUM_BANDS;
       }
      else{
-       //  maxVal = max(out[i],maxVal);
-        // printf("bands:%f maxval:%f\n",bands[i],out[i]); 
+         maxVal = max(out[i],maxVal);
+         printf("bands:%f maxval:%f\n",bands[i],out[i]); 
 }
       //printf("bands:%f average:%f\n",bands[i],out[i]);
   }
@@ -347,7 +347,7 @@ int read_write_streams(void)
       weighted_power_spectrum_fftw(numsamples,in,out,powerspec,A,den,4, plan);
       for(i=0; i<numsamples/2; i++){
        
-        printf("index:%d freq:%f value:%f\n",i,fres*(float)i,powerspec[i]);
+        //printf("index:%d freq:%f value:%f\n",i,fres*(float)i,powerspec[i]);
       } 
   //    printf("here\n");
       compute_band_weights(numsamples,powerspec,fres,weights,bands);
