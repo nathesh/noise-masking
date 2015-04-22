@@ -120,17 +120,18 @@ void compute_band_weights(int n, float* p, float fres,float* out, float* bands)
   //out is array of 10 values (NUM_BANDS) 
   //map values from 0-1 
   int i,k;
-  float maxVal,sum,avg;
+  float maxVal,sum,avg,threshold;
   maxVal = -200;
   i   = 0;
   avg = 0;
   sum = 0;
+  threshold = .0001;
 
 //calculate running average in each band  
   for (k = 0; k < n/2; k++) {
       if ((bands[i] <= (k*fres)) && ((k*fres) <= bands[i+1])) {
          maxVal = max(maxVal,p[k]);
-       // printf("%f",maxVal);
+//         printf("%f\n",maxVal);
         // out[i] /= 2;
       } 
       else if ((LINEAR && ((k*fres)<bands[0])) || (!LINEAR && ((k*fres)<bands[0]))) {
@@ -140,8 +141,10 @@ void compute_band_weights(int n, float* p, float fres,float* out, float* bands)
          break;
       }
       else {
-         out[i] = maxVal;
-         maxVal = -200;
+          out[i] = maxVal;
+  //       printf("%f\n",maxVal);
+          avg += maxVal;
+          maxVal = -200;
           i ++; 
       }
 }
@@ -149,6 +152,7 @@ void compute_band_weights(int n, float* p, float fres,float* out, float* bands)
 //scalculate normalized weights don't add bands that arent measured (ie weight = 1)
 //maybe set weights = to avg of weights in bands that arent measured....
   for (i = 0; i < NUM_BANDS; i++) {
+    
       if (out[i] != 1){
          sum += out[i];
       }
@@ -172,7 +176,7 @@ void compute_band_weights(int n, float* p, float fres,float* out, float* bands)
       }
      else{
          maxVal = max(out[i],maxVal);
-         printf("bands:%f maxval:%f\n",bands[i],out[i]); 
+       //  printf("bands:%f maxval:%f\n",bands[i],out[i]); 
 }
       //printf("bands:%f average:%f\n",bands[i],out[i]);
   }
@@ -357,15 +361,14 @@ int read_write_streams(void)
         summation = 0;
         for(y = 0; y <11;y++)
         {
-          summation += struct_data->noise[y*struct_data->num_frames*2+i];
           if(y < 10)
           {
             //printf("Before weighting: % 1.3f, weighting: %1.3f, After Weighting: % 1.3f\n" ,summation,weights[y],summation*weights[y]);
-            summation *=  weights[y];
-            
+            //summation *=  weights[y];
+          summation += struct_data->noise[y*struct_data->num_frames*2+i];
           }
           else
-            summation *= 1;///NUM_BANDS;
+          summation += struct_data->noise[y*struct_data->num_frames*2+i];
         }
          
           struct_data->data[i] = summation;
