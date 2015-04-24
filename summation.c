@@ -201,9 +201,10 @@ int read_write_streams(void)
 	PaStream *stream_input,  *stream_output; 
 	PaError error_input,error_output;
 	float den, fres, *recordsamples,*powerspec, *A, *weights, *bands, summation;
-	int i,totalframes,numsamples,numbytes,y; //y might cause problems 
+	int i,totalframes,numsamples,numbytes,y,counter; //y might cause problems 
 	fftw_complex *in, *out;
   fftw_plan plan;data* struct_data;
+  counter = 0; 
 	/* Declaration */
 	
 	struct_data = (data*) malloc(sizeof(data));
@@ -337,12 +338,14 @@ int read_write_streams(void)
 	/* Intialization */
 
 	/* Read and Write */
-   //sleep(100);  
+   //sleep(100); 
+   float randnum;
+   randnum = 1; 
    while( (Pa_IsStreamActive(stream_output ) ) == 1)
    {
    	  //printf("HERE!\n");
       //error_output = Pa_WriteStream(stream_output,outputsamples, 441000);
-
+      counter++;
       if( error_output  != paNoError && 0) goto error_o;
       error_input = Pa_ReadStream(stream_input,recordsamples, FRAMES);
       if(error_input != paNoError && 0) goto error;
@@ -356,19 +359,35 @@ int read_write_streams(void)
   //    printf("here\n");
       compute_band_weights(numsamples,powerspec,fres,weights,bands);
       //sleep(156);
+
+      if(counter%100 == 0)
+        {
+          randnum = (float)rand()/(float)(RAND_MAX/.1)+.9;
+        }
       for(i = 0;i<struct_data->num_frames*2;i++) // is accessing num_frames bandsd?
       {
         summation = 0;
         for(y = 0; y <11;y++)
         {
+          
           if(y < 10)
           {
             //printf("Before weighting: % 1.3f, weighting: %1.3f, After Weighting: % 1.3f\n" ,summation,weights[y],summation*weights[y]);
             //summation *=  weights[y];
+          
+          //printf("%f\n",randnum);
           summation += struct_data->noise[y*struct_data->num_frames*2+i];
+          summation *= randnum; //randnum;
+          //printf("Y= %d, %.4f\n",y, weights[y]);
+          
+          
           }
           else
-          summation += struct_data->noise[y*struct_data->num_frames*2+i];
+          { 
+            //float r = (float)rand()/(float)(RAND_MAX/.99);
+            summation += struct_data->noise[y*struct_data->num_frames*2+i];
+            summation *= randnum; //r;
+          }
         }
          
           struct_data->data[i] = summation;
