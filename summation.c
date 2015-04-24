@@ -153,14 +153,14 @@ void compute_band_weights(int n, float* p, float fres,float* out, float* bands)
 //maybe set weights = to avg of weights in bands that arent measured....
   for (i = 0; i < NUM_BANDS; i++) {
     if(out[i] > threshold){ 
-      if (out[i] != .5){
+      if (out[i] != .75){
           sum += out[i];
       }
   }
 }
   for (i = 0; i < NUM_BANDS; i++) {
     if(out[i] > threshold){ 
-      if (out[i] != .5){
+      if (out[i] != .75){
          out[i] /= sum;   
     }
     
@@ -171,7 +171,7 @@ void compute_band_weights(int n, float* p, float fres,float* out, float* bands)
          out[i] /= -1*sum;
       }*/
     }
-     out[i] += .5;
+     out[i] += .75;
   }
 
 //bands that are not measured set equal to avg of weights....
@@ -251,7 +251,7 @@ int read_write_streams(void)
     A[i] = 0;
   }
   for (i = 0; i <= NUM_BANDS; i++){
-    weights[i] = .5;  //init weights to 1 equal volume 
+    weights[i] = .75;  //init weights to 1 equal volume 
   }
   if (LINEAR == 1){
      bands[0] = 80;
