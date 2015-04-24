@@ -147,38 +147,39 @@ void compute_band_weights(int n, float* p, float fres,float* out, float* bands)
           maxVal = -200;
           i ++; 
       }
-}
-
-//scalculate normalized weights don't add bands that arent measured (ie weight = 1)
+  }
+  out[i] = maxVal;
+//calculate normalized weights don't add bands that arent measured (ie weight = 1)
 //maybe set weights = to avg of weights in bands that arent measured....
   for (i = 0; i < NUM_BANDS; i++) {
-    
-      if (out[i] != 1){
-         sum += out[i];
+    if(out[i] > threshold){ 
+      if (out[i] != .5){
+          sum += out[i];
       }
   }
+}
   for (i = 0; i < NUM_BANDS; i++) {
-      if (out[i] != 1){
-         out[i] /= sum;  
-      }
+    if(out[i] > threshold){ 
+      if (out[i] != .5){
+         out[i] /= sum;   
+    }
+    
     /* if ((out[i] != 1)&&(out[i]<0)){
          out[i] /= sum; 
       }
       else if((out[i] != 1)&&(out[i]>0)){
          out[i] /= -1*sum;
       }*/
+    }
+     out[i] += .5;
   }
 
 //bands that are not measured set equal to avg of weights....
   for (i = 0; i < NUM_BANDS; i++) {
-      if (out[i] == 1){
-    //     out[i] = 1/NUM_BANDS;
-      }
-     else{
-         maxVal = max(out[i],maxVal);
-       //  printf("bands:%f maxval:%f\n",bands[i],out[i]); 
-}
-      //printf("bands:%f average:%f\n",bands[i],out[i]);
+    if (out[i] >1) {
+       out[i] = 1;
+    }  
+ //    printf("bands:%f weights:%f\n",bands[i],out[i]);
   }
   
 }
@@ -249,8 +250,8 @@ int read_write_streams(void)
     powerspec[i] = 0; //should be half the size of the recorded samples
     A[i] = 0;
   }
-  for (i = 0; i < NUM_BANDS; i++){
-    weights[i] = 1;  //init weights to 1 equal volume 
+  for (i = 0; i <= NUM_BANDS; i++){
+    weights[i] = .5;  //init weights to 1 equal volume 
   }
   if (LINEAR == 1){
      bands[0] = 80;
@@ -373,11 +374,11 @@ int read_write_streams(void)
           if(y < 10)
           {
             //printf("Before weighting: % 1.3f, weighting: %1.3f, After Weighting: % 1.3f\n" ,summation,weights[y],summation*weights[y]);
-            //summation *=  weights[y];
+          //  summation *=  weights[y];
           
           //printf("%f\n",randnum);
           summation += struct_data->noise[y*struct_data->num_frames*2+i];
-          summation *= randnum; //randnum;
+          summation *= weights[y];//randnum; //randnum;
           //printf("Y= %d, %.4f\n",y, weights[y]);
           
           
@@ -386,7 +387,7 @@ int read_write_streams(void)
           { 
             //float r = (float)rand()/(float)(RAND_MAX/.99);
             summation += struct_data->noise[y*struct_data->num_frames*2+i];
-            summation *= randnum; //r;
+            summation *= weights[y];//randnum; //r;
           }
         }
          
