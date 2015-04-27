@@ -64,7 +64,7 @@ static int output_callback(const void *inputBuffer, void *outputBuffer,
     {
     	// pick in the 3/4 of the frames so cuts and randomize the location to not make it seem repetative  
        
-    	 data_struct->cursor = 3*data_struct->num_frames/2;  
+    	 data_struct->cursor = 3*data_struct->num_frames/2+rand()%2000-1000;  
        *out++ = data_struct->data[data_struct->cursor++];
        //printf("%f\n",out[i]);
        *out++ = data_struct->data[data_struct->cursor++];   
@@ -217,7 +217,7 @@ int read_write_streams(void)
     summation = 0;
     for(y = 0; y <11;y++)
     {
-      summation += struct_data->data[y*struct_data->num_frames*2+i];
+      summation += struct_data->noise[y*struct_data->num_frames*2+i];
     }
     struct_data->data[i] = summation;
   }
@@ -244,7 +244,7 @@ int read_write_streams(void)
   CHECK_MALLOC(out,"read_write_streams");
   plan = fftw_plan_dft_1d(numsamples, in, out, FFTW_FORWARD, FFTW_MEASURE);
   struct_data->cursor = 0;
-  struct_data->num_frames = 441000;
+  //struct_data->num_frames = 441000;
   for (i = 0; i < numsamples; i++){
     recordsamples[i] = 0;
     powerspec[i] = 0; //should be half the size of the recorded samples
@@ -342,10 +342,11 @@ int read_write_streams(void)
    //sleep(100); 
    float randnum;
    randnum = 1; 
-   while( (Pa_IsStreamActive(stream_output ) ) == 1)
+   while(1)
    {
    	  //printf("HERE!\n");
       //error_output = Pa_WriteStream(stream_output,outputsamples, 441000);
+      
       counter++;
       if( error_output  != paNoError && 0) goto error_o;
       error_input = Pa_ReadStream(stream_input,recordsamples, FRAMES);
@@ -360,40 +361,22 @@ int read_write_streams(void)
   //    printf("here\n");
       compute_band_weights(numsamples,powerspec,fres,weights,bands);
       //sleep(156);
-
-      if(counter%100 == 0)
+      //sleep(10);
+      if(counter%1 == 0)
         {
-          randnum = (float)rand()/(float)(RAND_MAX/.1)+.9;
+        
+          //printf("%f\n",weights[0]);
+          for(i = 0;i<struct_data->num_frames*2;i++) // is accessing num_frames bad?
+            {
+              summation = 0;
+              for(y = 0; y <11;y++)
+              {
+                summation += weights[y]*.7*struct_data->data[y*struct_data->num_frames*2+i];
+              }
+              struct_data->data[i] = summation;
+            }
+          //printf("y=%d,i=%d,numframe=%d,maxnum=%d\n",y,i,struct_data->num_frames,y*struct_data->num_frames*2+i);
         }
-      for(i = 0;i<struct_data->num_frames*2;i++) // is accessing num_frames bandsd?
-      {
-        summation = 0;
-        for(y = 0; y <11;y++)
-        {
-          
-          if(y < 10)
-          {
-            //printf("Before weighting: % 1.3f, weighting: %1.3f, After Weighting: % 1.3f\n" ,summation,weights[y],summation*weights[y]);
-          //  summation *=  weights[y];
-          
-          //printf("%f\n",randnum);
-          summation += struct_data->noise[y*struct_data->num_frames*2+i];
-          summation *= weights[y];//randnum; //randnum;
-          //printf("Y= %d, %.4f\n",y, weights[y]);
-          
-          
-          }
-          else
-          { 
-            //float r = (float)rand()/(float)(RAND_MAX/.99);
-            summation += struct_data->noise[y*struct_data->num_frames*2+i];
-            summation *= weights[y];//randnum; //r;
-          }
-        }
-         
-          struct_data->data[i] = summation;
-      }
-      //struct_data->data[i]
       //print data
       
       
@@ -424,7 +407,7 @@ data* output_file(void)
 	  /* Declaration */
     SNDFILE *sf;
     SF_INFO info;
-    int num, num_items,f,sr,c,files,x,counter;
+    int num, num_items,f,sr,c,files,x,counter,i;
     float *buf,*combination, *noise_1;
     char *path_name,buff[128]; 
     struct dirent **namelist;
@@ -441,7 +424,11 @@ data* output_file(void)
     data_struct = (data*) malloc(sizeof(data));
     data_struct->cursor = 0; 
     /* Intialization */
-
+    for(i=0;i<819144*11;i++)
+    {
+      noise_1[i] = 0;
+      combination[i] = 0;
+    }
     /* Reading the file */
     if(num <0)
     {
@@ -451,6 +438,7 @@ data* output_file(void)
     {
       while(files<num)
       {
+        printf("%d\n",counter);
         if(strcmp(namelist[files]->d_name,".") != 0 && strcmp(namelist[files]->d_name,".."))
         {
           printf("%d, %s\n",files,namelist[files]->d_name);
@@ -475,6 +463,8 @@ data* output_file(void)
           buf = (float *) malloc(num_items*sizeof(float)); // Need to free this buf
           sf_read_float(sf,buf,num_items);
           sf_close(sf);
+          //printf("counter=%d\n",counter);
+          //printf("Max=%d\n",counter*num_items+num_items);
           for(x=0;x<num_items;x++)
           {
             combination[counter*num_items+x] = buf[x];
