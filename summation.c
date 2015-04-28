@@ -1,4 +1,5 @@
 #include "portaudio.h"
+#include <stdbool.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -28,15 +29,13 @@ typedef struct
 #define CHANNELS (2)
 #define SAMPLE_RATE (8000)
 #define CHECK_OVERFLOW  (0)
-#define LINEAR (1) //0 for octave NUM_BANDS
-#define NUM_BANDS (10)
 #define max(a,b) \
    ({ __typeof__ (a) _a = (a); \
        __typeof__ (b) _b = (b); \
      _a > _b ? _a : _b; })
 
-int read_write_streams(void);
-data* output_file(void);
+int read_write_streams(char* bandSpacing, char* maskingNoise, char* maskingType);
+data* output_file(int numBands, bool linear, bool rain);
 
 static int output_callback(const void *inputBuffer, void *outputBuffer,
                           unsigned long framesPerBuffer,
@@ -114,10 +113,10 @@ void A_compute_coeff(int n, float* A, float fres) {
 }
 
 
-void compute_band_weights(int n, float* p, float fres,float* out, float* bands)
+void compute_band_weights(int numBands, bool linear, int n, float* p, float fres,float* out, float* bands)
 {
   //in is PSD data 
-  //out is array of 10 values (NUM_BANDS) 
+  //out is array of 10 values (numBands) 
   //map values from 0-1 
   int i,k;
   float maxVal,sum,avg,threshold;
@@ -134,7 +133,7 @@ void compute_band_weights(int n, float* p, float fres,float* out, float* bands)
 //         printf("%f\n",maxVal);
         // out[i] /= 2;
       } 
-      else if ((LINEAR && ((k*fres)<bands[0])) || (!LINEAR && ((k*fres)<bands[0]))) {
+      else if ((linear && ((k*fres)<bands[0])) || (!linear && ((k*fres)<bands[0]))) {
         // if between -0 80 in linear bands ignor 
       }   
       else if (bands[i] > SAMPLE_RATE/2 ){
@@ -151,14 +150,14 @@ void compute_band_weights(int n, float* p, float fres,float* out, float* bands)
   out[i] = maxVal;
 //calculate normalized weights don't add bands that arent measured (ie weight = 1)
 //maybe set weights = to avg of weights in bands that arent measured....
-  for (i = 0; i < NUM_BANDS; i++) {
+  for (i = 0; i < numBands; i++) {
     if(out[i] > threshold){ 
       if (out[i] != .75){
           sum += out[i];
       }
   }
 }
-  for (i = 0; i < NUM_BANDS; i++) {
+  for (i = 0; i < numBands; i++) {
     if(out[i] > threshold){ 
       if (out[i] != .75){
          out[i] /= sum;   
@@ -175,47 +174,82 @@ void compute_band_weights(int n, float* p, float fres,float* out, float* bands)
   }
 
 //bands that are not measured set equal to avg of weights....
-  for (i = 0; i < NUM_BANDS; i++) {
+  for (i = 0; i < numBands; i++) {
     if (out[i] >1) {
        out[i] = 1;
     }  
- //    printf("bands:%f weights:%f\n",bands[i],out[i]);
+     printf("bands:%f weights:%f\n",bands[i],out[i]);
   }
   
 }
 
 
-int main(void)
+int main(int argc, char* argv[])
 {
-
-	read_write_streams();
-
+  /* Declare */
+  char *linear, *maskNoise, *bandSpacing, *maskType;
+  int i;
+  /* Initialize */
+  if (argc != 4){
+     printf("Error need 3 arguments");
+  }
+  else {
+    maskNoise     = argv[1];
+    maskType      = argv[2];
+    bandSpacing   = argv[3];
+    read_write_streams(bandSpacing, maskNoise, maskType);
+ }
 
 	return 0; 
 
 }
 
-int read_write_streams(void)
+int read_write_streams(char* bandSpacing, char* maskNoise, char* maskType)
 {
 	/* Declaration */ 
 	PaStreamParameters input, output; 
 	PaStream *stream_input,  *stream_output; 
 	PaError error_input,error_output;
 	float den, fres, *recordsamples,*powerspec, *A, *weights, *bands, summation;
-	int i,totalframes,numsamples,numbytes,y,counter; //y might cause problems 
-	fftw_complex *in, *out;
-  fftw_plan plan;data* struct_data;
+	int i, numBands, totalframes, numsamples, numbytes, y, counter; //y might cause problems 
+	bool dynamic, rain, linear;
+  fftw_complex *in, *out;
+  fftw_plan plan;
+  data* struct_data;
   counter = 0; 
 	/* Declaration */
 	
 	struct_data = (data*) malloc(sizeof(data));
 
-	/* Read the wav */
-	struct_data = output_file();
+
+//INIT arguments from command line
+  if (strcmp(maskType,"Dynamic")==0){
+      dynamic  = 1;
+  } 
+  else {
+     dynamic  = 0; 
+  }
+  if (strcmp(maskNoise,"Rain")==0){
+     rain     = 1;
+  } 
+  else {
+     rain     = 0; 
+  }
+  if (strcmp(bandSpacing,"linear")==0){
+     numBands = 11;
+     linear   = 1;
+  }
+  else {
+     numBands = 8;
+     linear   = 0;
+  }
+  printf("linear: %d rain: %d dynamic: %d \n",linear,rain,dynamic);	
+/* Read the wav */
+	struct_data = output_file(numBands,linear,rain);
   for(i = 0;i<struct_data->num_frames*2;i++) // is accessing num_frames bad?
   {
     summation = 0;
-    for(y = 0; y <11;y++)
+    for(y = 0; y < numBands; y++)
     {
       summation += struct_data->noise[y*struct_data->num_frames*2+i];
     }
@@ -229,34 +263,38 @@ int read_write_streams(void)
   fres          = (float) SAMPLE_RATE/FRAMES;
   numbytes      = numsamples * sizeof(float);
   recordsamples = (float*) malloc(numbytes);
+  powerspec     = (float*) malloc(numbytes); //malloc too much memory but i think that cool we will figure it out
+  A             = (float*) malloc(numbytes);
+  weights       = (float*)malloc(sizeof(float)*numBands); //final computed band weights
+  bands         = (float*)malloc(sizeof(float)*numBands);  //bands specified to compute band weights
+  in            = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * numsamples);
+  out           = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * numsamples);
   CHECK_MALLOC(recordsamples,"read_write_streams");
-  powerspec = (float*) malloc(numbytes); //malloc too much memory but i think that cool we will figure it out
   CHECK_MALLOC(powerspec,"read_write_streams"); 
-  A = (float*) malloc(numbytes);
-  CHECK_MALLOC(A,"read_write_streams");
-  weights = (float*)malloc(sizeof(float)*NUM_BANDS); //final computed band weights
   CHECK_MALLOC(weights,"read_write_streams");
-  bands = (float*)malloc(sizeof(float)*NUM_BANDS);  //bands specified to compute band weights
   CHECK_MALLOC(bands,"read_write_streams");
-  in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * numsamples);
-  out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * numsamples);
   CHECK_MALLOC(in,"read_write_streams");
   CHECK_MALLOC(out,"read_write_streams");
-  plan = fftw_plan_dft_1d(numsamples, in, out, FFTW_FORWARD, FFTW_MEASURE);
+  CHECK_MALLOC(A,"read_write_streams");
+  
+  
+  plan                = fftw_plan_dft_1d(numsamples, in, out, FFTW_FORWARD, FFTW_MEASURE);
   struct_data->cursor = 0;
+
+
   //struct_data->num_frames = 441000;
   for (i = 0; i < numsamples; i++){
     recordsamples[i] = 0;
-    powerspec[i] = 0; //should be half the size of the recorded samples
-    A[i] = 0;
+    powerspec[i]     = 0; //should be half the size of the recorded samples
+    A[i]             = 0;
   }
-  for (i = 0; i <= NUM_BANDS; i++){
-    weights[i] = .75;  //init weights to 1 equal volume 
+  for (i = 0; i <= numBands; i++){
+    weights[i]      = .75;  //init weights to 1 equal volume 
   }
-  if (LINEAR == 1){
-     bands[0] = 80;
-     for (i = 1; i <= NUM_BANDS; i++) {
-         bands[i] = i*(SAMPLE_RATE/2)/NUM_BANDS;
+  if (linear == 1){
+     bands[0]       = 80;
+     for (i = 1; i <= numBands; i++) {
+         bands[i]   = i*(SAMPLE_RATE/2)/numBands;
      }
   }
   else{
@@ -268,8 +306,6 @@ int read_write_streams(void)
      bands[5] = 2000;
      bands[6] = 4000;
      bands[7] = 8000;
-     bands[8] = 11000;
-     bands[9] = 22000; 
  }
 
   A_compute_coeff(numsamples,A,fres);
@@ -354,29 +390,21 @@ int read_write_streams(void)
        //do FFT PROCESSING
       inputsignal(in, recordsamples, CHANNELS*numsamples); //converts to fftw_complex and averages stereo to mono
       weighted_power_spectrum_fftw(numsamples,in,out,powerspec,A,den,4, plan);
-      for(i=0; i<numsamples/2; i++){
-       
-        //printf("index:%d freq:%f value:%f\n",i,fres*(float)i,powerspec[i]);
-      } 
-  //    printf("here\n");
-      compute_band_weights(numsamples,powerspec,fres,weights,bands);
-      //sleep(156);
-      //sleep(10);
-      if(counter%1 == 0)
-        {
-        
-          //printf("%f\n",weights[0]);
+    //compute bands if dynamic masking
+      if (dynamic){
+        compute_band_weights(numBands,linear,numsamples,powerspec,fres,weights,bands);
+      }
           for(i = 0;i<struct_data->num_frames*2;i++) // is accessing num_frames bad?
             {
               summation = 0;
-              for(y = 0; y <11;y++)
+              for(y = 0; y <numBands;y++)
               {
-                summation += weights[y]*.7*struct_data->data[y*struct_data->num_frames*2+i];
+                  summation += weights[y]*struct_data->data[y*struct_data->num_frames*2+i];
               }
               struct_data->data[i] = summation;
             }
           //printf("y=%d,i=%d,numframe=%d,maxnum=%d\n",y,i,struct_data->num_frames,y*struct_data->num_frames*2+i);
-        }
+        
       //print data
       
       
@@ -402,7 +430,7 @@ error_o:
     fprintf( stderr, "Error message: %s\n", Pa_GetErrorText( error_output) );
  return 0;
 }
-data* output_file(void)
+data* output_file(int numBands, bool linear, bool rain)
 {
 	  /* Declaration */
     SNDFILE *sf;
@@ -416,15 +444,30 @@ data* output_file(void)
 
     /* Intialization */
     counter = 0;
-    path_name = "data/";
+    if (rain){
+       if(linear){
+         path_name = "data/rain/linear/";
+       }
+      else{
+         path_name = "data/rain/octave/";
+      }
+    }
+    else{
+       if(linear){
+         path_name = "data/creek/linear/";
+       }
+       else {
+         path_name = "data/creek/octave/";
+       }
+    }
     files = 0; 
     num = scandir(path_name, &namelist, 0, alphasort);
-    combination = (float*) malloc(sizeof(float)*819144*11);
-    noise_1 = (float*) malloc(sizeof(float)*819144*11);
+    combination = (float*) malloc(sizeof(float)*819144*numBands);
+    noise_1 = (float*) malloc(sizeof(float)*819144*numBands);
     data_struct = (data*) malloc(sizeof(data));
     data_struct->cursor = 0; 
     /* Intialization */
-    for(i=0;i<819144*11;i++)
+    for(i=0;i<819144*numBands;i++)
     {
       noise_1[i] = 0;
       combination[i] = 0;
