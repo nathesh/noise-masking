@@ -236,11 +236,11 @@ int read_write_streams(char* bandSpacing, char* maskNoise, char* maskType)
      rain     = 0; 
   }
   if (strcmp(bandSpacing,"linear")==0){
-     numBands = 11;
+     numBands = 10;
      linear   = 1;
   }
   else {
-     numBands = 8;
+     numBands = 7;
      linear   = 0;
   }
   printf("linear: %d rain: %d dynamic: %d \n",linear,rain,dynamic);	
@@ -249,7 +249,7 @@ int read_write_streams(char* bandSpacing, char* maskNoise, char* maskType)
   for(i = 0;i<struct_data->num_frames*2;i++) // is accessing num_frames bad?
   {
     summation = 0;
-    for(y = 0; y < numBands; y++)
+    for(y = 0; y <= numBands; y++)
     {
       summation += struct_data->noise[y*struct_data->num_frames*2+i];
     }
@@ -375,31 +375,26 @@ int read_write_streams(char* bandSpacing, char* maskNoise, char* maskType)
 	/* Intialization */
 
 	/* Read and Write */
-   //sleep(100); 
-   float randnum;
-   randnum = 1; 
    while(1)
    {
-   	  //printf("HERE!\n");
       //error_output = Pa_WriteStream(stream_output,outputsamples, 441000);
-      
-      counter++;
       if( error_output  != paNoError && 0) goto error_o;
       error_input = Pa_ReadStream(stream_input,recordsamples, FRAMES);
       if(error_input != paNoError && 0) goto error;
-       //do FFT PROCESSING
+      //do FFT PROCESSING
       inputsignal(in, recordsamples, CHANNELS*numsamples); //converts to fftw_complex and averages stereo to mono
       weighted_power_spectrum_fftw(numsamples,in,out,powerspec,A,den,4, plan);
-    //compute bands if dynamic masking
+      //compute bands if dynamic masking
       if (dynamic){
-        compute_band_weights(numBands,linear,numsamples,powerspec,fres,weights,bands);
-      }
+           compute_band_weights(numBands,linear,numsamples,powerspec,fres,weights,bands);
+       }
           for(i = 0;i<struct_data->num_frames*2;i++) // is accessing num_frames bad?
             {
               summation = 0;
-              for(y = 0; y <numBands;y++)
+              for(y = 0; y <= numBands;y++)
               {
-                  summation += weights[y]*struct_data->data[y*struct_data->num_frames*2+i];
+                  printf("%f\n",weights[y]);
+                  summation +=  0*struct_data->data[y*struct_data->num_frames*2+i];
               }
               struct_data->data[i] = summation;
             }
@@ -462,12 +457,12 @@ data* output_file(int numBands, bool linear, bool rain)
     }
     files = 0; 
     num = scandir(path_name, &namelist, 0, alphasort);
-    combination = (float*) malloc(sizeof(float)*819144*numBands);
-    noise_1 = (float*) malloc(sizeof(float)*819144*numBands);
+    combination = (float*) malloc(sizeof(float)*819144*(numBands+1));
+    noise_1 = (float*) malloc(sizeof(float)*819144*(numBands+1));
     data_struct = (data*) malloc(sizeof(data));
     data_struct->cursor = 0; 
     /* Intialization */
-    for(i=0;i<819144*numBands;i++)
+    for(i=0;i<819144*(numBands+1);i++)
     {
       noise_1[i] = 0;
       combination[i] = 0;
