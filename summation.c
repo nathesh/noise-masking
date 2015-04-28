@@ -243,7 +243,6 @@ int read_write_streams(char* bandSpacing, char* maskNoise, char* maskType)
      numBands = 7;
      linear   = 0;
   }
-  printf("linear: %d rain: %d dynamic: %d \n",linear,rain,dynamic);	
 /* Read the wav */
 	struct_data = output_file(numBands,linear,rain);
   for(i = 0;i<struct_data->num_frames*2;i++) // is accessing num_frames bad?
@@ -393,8 +392,8 @@ int read_write_streams(char* bandSpacing, char* maskNoise, char* maskType)
               summation = 0;
               for(y = 0; y <= numBands;y++)
               {
-                  printf("%f\n",weights[y]);
-                  summation +=  0*struct_data->data[y*struct_data->num_frames*2+i];
+                 // printf("%f\n",weights[y]);
+                  summation +=  weights[y]*struct_data->data[y*struct_data->num_frames*2+i];
               }
               struct_data->data[i] = summation;
             }
