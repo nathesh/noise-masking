@@ -16,9 +16,17 @@ app.debug = True
 def index():
     return render_template('index.html')
 
-@app.route('/graph')
-def graph():
-    return Super.test()
+@app.route('/in_signal')
+def graph1():
+    return Super.graph1() # return input signal
+
+@app.route('/in_fft')
+def graph2():
+	return Super.graph2() # return input FFT
+
+@app.route('/out_spl')
+def graph3():
+	return Super.graph3() # return output SPL
     
 
 if __name__=='__main__':
