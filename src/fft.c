@@ -232,5 +232,7 @@ weighted_power_spectrum_fftw (int n, fftw_complex *x, fftw_complex *y, float *p,
   int i;    
   //fft data in y
    HC_to_amp2 (n, y, den, p);
+   A_weighting(n,weights,p);
+
 }
 
