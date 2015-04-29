@@ -368,14 +368,14 @@ data* output_file(int numBands, bool linear, bool rain)
 void A_compute_coeff(int n, float* A, float fres) {
   int i;
   int freq, freq1; //or float???? lose precision....
-  float Y1 = pow(12200,2);
-  float Y2 = pow(20.6,2);
-  float Y3 = pow(107.7,2);
-  float Y4 = pow(737.9,2);
+  static float Y1 = (12200*12200);
+  static float Y2 = (20.6*20.6);
+  static float Y3 = (107.7*107.7);
+  static float Y4 = (737.9*737.9);
   for (i=0; i < n; i++) 
-  {    freq1 = fres*i;
-       freq  = pow(i * fres,2);
-       A[i]  = 20*log10((Y1 *pow(freq,2))/ 
+  {    //freq1 = fres*i;
+       freq  = i * fres * i * fres;
+       A[i]  = 20*log10((Y1 * freq * freq)/ 
                     ((Y1 + freq) * (Y2 + freq) *  sqrt((Y3 + freq) * (Y4 + freq))))+2;
   }
 }
@@ -400,15 +400,17 @@ static int output_callback(const void *inputBuffer,
                            void *userData ) 
 { 
     /* Intialization */
-  int i;
+  int i, sat, curs;
   float* out        = (float*)outputBuffer;
    
-  data* data_struct = (data*) userData;
 
+  data* data_struct = (data*) userData;
+  sat = data_struct->num_frames*data_struct->channels;
+  curs = 3*data_struct->num_frames/2-1000
 
   for (i = 0; i < framesPerBuffer; i++)
   {
-    if(data_struct->cursor < data_struct->num_frames*data_struct->channels)
+    if(data_struct->cursor < sat)
     {
       *out++ = data_struct->data[data_struct->cursor++];
       *out++ = data_struct->data[data_struct->cursor++];   
@@ -416,7 +418,7 @@ static int output_callback(const void *inputBuffer,
     else
     {
       // pick in the 3/4 of the frames so cuts and randomize the location to not make it seem repetative  
-       data_struct->cursor = 3*data_struct->num_frames/2+rand()%2000-1000;  
+       data_struct->cursor = curs + rand() % 2000;  
        *out++ = data_struct->data[data_struct->cursor++];
        *out++ = data_struct->data[data_struct->cursor++];   
     }
@@ -445,7 +447,7 @@ void inputsignal(fftw_complex* signal,float* Record, int numsamples) {
  //i dont know if this will work if numsamples is odd....
   for (k = 0; k < numsamples; k++) 
   {
-       if( (CHANNELS == 2) && (k %2 == 0)) 
+       if( (k % 2 == 0) && CHANNELS == 2) 
        {
            signal[k/2][0] = (Record[k]+Record[k+1])/2;
            signal[k/2][1] = 0;
@@ -491,11 +493,7 @@ void compute_band_weights(int numBands, bool linear, int n, float* p, float fres
       if ((bands[i] <= (k*fres)) && ((k*fres) <= bands[i+1])) 
       {
          maxVal = max(maxVal,p[k]);
-      } 
-      else if ((linear && ((k*fres)<bands[0])) || (!linear && ((k*fres)<bands[0]))) 
-      {
-        // if between -0 80 in linear bands ignor 
-      }   
+      }    
       else if (bands[i] > SAMPLE_RATE/2 ){
          break;
       }
@@ -521,16 +519,18 @@ void compute_band_weights(int numBands, bool linear, int n, float* p, float fres
       out[i] /= sum;   
     
     out[i] += .75;
+
+    if (out[i] >1) 
+       out[i] = 1;
   }
 
 //bands that are not measured set equal to avg of weights....
+  /*
   for (i = 0; i < numBands; i++) 
   {
-    if (out[i] >1) 
-       out[i] = 1;
-     
      printf("bands:%f weights:%f\n",bands[i],out[i]);
   }
+  */
 
   return;
 }
