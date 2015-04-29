@@ -94,7 +94,7 @@ int read_write_streams(char* bandSpacing, char* maskNoise, char* maskType)
   // Convert command line args to booleans 
   dynamic = !strcmp(maskType,"Dynamic")?   1:0;
   rain    = !strcmp(maskNoise, "Rain")?    1:0;
-  linear  = !strcmp(bandSpacing, "linear") 1:0;
+  linear  = !strcmp(bandSpacing, "linear")? 1:0;
   if(linear) numBands = 10;
   else       numBands = 7;
 
@@ -162,9 +162,9 @@ int read_write_streams(char* bandSpacing, char* maskNoise, char* maskType)
 /* PORT AUDIO INIT W/ ERROR CHECKING */
   if( paNoError != (error_input = Pa_Initialize()) ) goto error;
   if( paNoError != (error_output = Pa_Initialize()) ) goto error;
-  if( paNoDevice == (input.device = Pa_GetDefaultInputDevice())
+  if( paNoDevice == (input.device = Pa_GetDefaultInputDevice()))
     { fprintf(stderr, "Error: No default input device. \n");  goto error; }
-  if( paNoDevice == (output.device = Pa_GetDefaultOutputDevice())
+  if( paNoDevice == (output.device = Pa_GetDefaultOutputDevice()))
     { fprintf(stderr, "Error: No default output device. \n");  goto error; }
 
  
@@ -325,7 +325,7 @@ data* output_file(int numBands, bool linear, bool rain)
 
           printf("frames=%d \n", f = info.frames);
           printf("samplerate=%d \n", sr = info.samplerate);
-          printf("channels=%d \n", c = info.channels;);
+          printf("channels=%d \n", c = info.channels);
           printf("num_items=%d \n", num_items = f*c);
 
           data_struct->num_frames = f; // Assuming the frames are the same
@@ -445,7 +445,7 @@ void inputsignal(fftw_complex* signal,float* Record, int numsamples) {
  //i dont know if this will work if numsamples is odd....
   for (k = 0; k < numsamples; k++) 
   {
-       if( (CHANNELS == 2) && (k %2 == 0) 
+       if( (CHANNELS == 2) && (k %2 == 0)) 
        {
            signal[k/2][0] = (Record[k]+Record[k+1])/2;
            signal[k/2][1] = 0;
