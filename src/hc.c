@@ -135,7 +135,7 @@ void HC_to_amp2 (int len, fftw_complex *freq, float scale,
      // amp2 [i] = 10*log10((rl * rl + im * im) / len);
       fprintf(fftw_file,"%f\n",amp2[i]);
     }
-  fclose(fftw_file);
+  fclose(fftw_file);    
   if (len%2 == 0)
     {
       amp2[len/2] = (freq[len/2][0]* freq[len/2][0] / len);
