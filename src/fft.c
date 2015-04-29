@@ -137,37 +137,6 @@ windowing (int n, fftw_complex *data, int flag_window, float scale)
     }
 }
 
-/* apply FFT with the window and return amplitude and phase
- * this is a wrapper mainly for phase vocoder process
- * INPUT
- *  len : FFT length
- *  data[len] : data to analyze
- *  flag_window : window type
- *  plan, in[len], out[len] : for FFTW3
- *  scale : amplitude scale factor
- * OUTPUT
- *  amp[len/2+1] : amplitude multiplied by the factor "scale" above
- *  phs[len/2+1] : phase
- */
-void
-apply_FFT (int len, fftw_complex *data, int flag_window,
-	   fftw_plan plan, fftw_complex *in, fftw_complex *out,
-	   float scale,
-	   float *amp, float *phs)
-{
-  int i;
-
-  windowing (len, data, flag_window, 1.0);
-  fftw_execute (plan); // FFT: in[] -> out[]
-  HC_to_polar (len, out, 0, amp, phs); // freq[] -> (amp, phs)
-
-  // some scaling
-  for (i = 0; i < (len/2)+1; i ++)
-    {
-      amp [i] /= scale;
-    }
-}
-
 
 /* prepare window for FFT
  * INPUT
@@ -230,15 +199,6 @@ init_den (int n, char flag_window)
   return den;
 }
 
-void A_weighting(int n, float* weights, float* in)
-{
-	int i;
-	for(i=0; i<n; i++){
-  //  printf("%f\n",weights[i]);
-	  in[i] = weights[i] + in[i];
-	}
-}
-
 /* calc power spectrum of real data x[n]
  * INPUT
  *  n : # of data in x
@@ -258,7 +218,6 @@ void A_weighting(int n, float* weights, float* in)
  */
 void
 weighted_power_spectrum_fftw (int n, fftw_complex *x, fftw_complex *y, float *p, 
-		     float *weights,
 		     float den,
 		     char flag_window,
 		     fftw_plan plan)
@@ -271,17 +230,9 @@ weighted_power_spectrum_fftw (int n, fftw_complex *x, fftw_complex *y, float *p,
 /* FFTW library  */
   fftw_execute (plan); // x[] -> y[]
   int i;    
-/* apply A weighting */ 
-  for(i=0; i<n/2; i++){
-       //  fftw_execute(plan);
-     //  printf("index:%d freq:%f value:%fdBA\n",i,7.8125*(float)i,20*log10(pow(y[i][0],2)+pow(y[i][1],2)));
-      } 
-/* get amplitude in dB*/
+  //fft data in y
    HC_to_amp2 (n, y, den, p);
    A_weighting(n,weights,p);
-  for(i=0; i<n/2; i++){
-       //  fftw_execute(plan);
-    //   printf("index:%d freq:%f value:%fdB\n",i,7.8125*(float)i,p[i]);
-      } 
+
 }
 

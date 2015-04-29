@@ -1,0 +1,6 @@
+.DS_Store
+**/mask.dSYM
+mask.dSYM/**
+mask
+output
+*.o

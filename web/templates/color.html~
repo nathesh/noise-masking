@@ -1,0 +1,118 @@
+<!-- credits to styleshout.com -->
+<!-- this template and the corresponding css is based on Colourise template, by Erwin Aligam -->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+
+<title>SoundShield</title>
+
+<meta http-equiv="content-type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="author" content="Erwin Aligam - styleshout.com" />
+<meta name="description" content="Site Description Here" />
+<meta name="keywords" content="keywords, here" />
+<meta name="robots" content="index, follow, noarchive" />
+<meta name="googlebot" content="noarchive" />
+
+<link rel="stylesheet" href="images/Colourise.css" type="text/css" />
+
+</head>
+
+<body>
+
+<!-- wrap starts here -->
+<div id="wrap">
+
+	<!--header -->
+	<div id="header">			
+				
+		<h1 id="logo-text"><a href="index.html" title="">SoundShield</a></h1>		
+		<p id="intro">
+		Dynamic sound masking device
+	    <br><br>
+		This website will display a graph of the real-time stream of the microphone input signal  and the SPL from the C code. The user can specify the masking noise and the masking type (dynamic or static).
+		</p>
+				
+	<!--header ends-->					
+	</div>
+	
+	<!-- content-wrap starts -->
+	<div id="content-wrap">
+				
+		<div id="main">
+							
+			
+			<h2>Run Options</h2>
+			
+			<h3>Runtime</h3>
+			<p>Please enter runtime in 24-hour format (hhmm).</p>
+			<p>	<form>
+                Start:<br>
+                <input type="text" name="starttime">
+                <br>
+                End:<br>
+                <input type="text" name="endtime">
+                </form>				
+			</p>
+			<p>Or enter amount of time to run the device for (hhmm).</p>
+			<p><form>
+                Runtime:<br>
+                <input type="text" name="runtime">
+                </form>	
+		    </p>
+			
+			
+			<h3>Masking Noise</h3>
+			<p><select name="Masking Noise">
+               <option value="rain">Rain</option>
+               <option value="ocean">Ocean</option>
+               <option value="jungle">Jungle</option>
+               </select>
+			</p>
+			
+			<h3>Mask Type</h3>
+			<p><select name="Mask Type">
+			   <option value="dynamic">Dynamic</option>
+			   <option value="static">Static</option>
+			   </select>
+			 </p>
+			 <h2>
+			 <p>
+                <button type="button" onclick="alert('Changes Applied!')">Apply Changes</button>
+			 </p>
+			 </h2>
+			 
+
+
+			
+			<br />	
+
+		<!-- main ends -->	
+		</div>
+		
+		<!-- sidebar starts -->
+		<div id="sidebar">
+		
+			<h3>Members of ECE Senior Design Team 17 </h3>
+			<p>Colton Snell, Andrew Mills, Thejas Prasad, Chris Correll, Michael Rust, Hao Cheam.</p>
+				
+			<h3>Advisors</h3>
+			<p>Dr. Brian Evans, Dr. Gregory Allen.</p>
+			
+		<!-- sidebar ends -->		
+		</div>
+
+		
+		
+	<!-- content-wrap ends-->	
+	</div>
+	
+
+		
+<!-- wrap ends here -->
+</div>
+
+</body>
+</html>
