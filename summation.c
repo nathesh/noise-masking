@@ -368,14 +368,14 @@ data* output_file(int numBands, bool linear, bool rain)
 void A_compute_coeff(int n, float* A, float fres) {
   int i;
   int freq, freq1; //or float???? lose precision....
-  float Y1 = pow(12200,2);
-  float Y2 = pow(20.6,2);
-  float Y3 = pow(107.7,2);
-  float Y4 = pow(737.9,2);
+  static int Y1 = 12200*12200;
+  static int Y2 = 20.6*20.6;
+  static int Y3 = 107.7*107.7;
+  static int Y4 = 737.9*737.9;
   for (i=0; i < n; i++) 
   {    freq1 = fres*i;
        freq  = pow(i * fres,2);
-       A[i]  = 20*log10((Y1 *pow(freq,2))/ 
+       A[i]  = (float) 20*log10((Y1 *pow(freq,2))/ 
                     ((Y1 + freq) * (Y2 + freq) *  sqrt((Y3 + freq) * (Y4 + freq))))+2;
   }
 }
