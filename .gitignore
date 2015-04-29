@@ -3,3 +3,4 @@
 mask.dSYM/**
 mask
 output
+*.o
