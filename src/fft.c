@@ -217,7 +217,7 @@ init_den (int n, char flag_window)
  *  p[(n+1)/2] : stored only n/2 data
  */
 void
-weighted_power_spectrum_fftw (int n, fftw_complex *x, fftw_complex *y, float *p, 
+weighted_power_spectrum_fftw (int n, fftw_complex *x, fftw_complex *y, float *p, float* weights,
 		     float den,
 		     char flag_window,
 		     fftw_plan plan)
@@ -232,7 +232,6 @@ weighted_power_spectrum_fftw (int n, fftw_complex *x, fftw_complex *y, float *p,
   int i;    
   //fft data in y
    HC_to_amp2 (n, y, den, p);
-   A_weighting(n,weights,p);
-
+  
 }
 
