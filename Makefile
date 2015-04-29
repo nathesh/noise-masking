@@ -1,5 +1,7 @@
 CC=gcc
-CFLAGS=-lsndfile -lfftw3 -lm -pthread -lportaudio -D_GNU_SOURCE
+CFLAGS=-lsndfile -lfftw3 -lm -pthread -lportaudio
+SOURCES=src/summation.c src/fft.c src/hc.c
+EXECUTABLE=exe/mask
 OBJECTS=summation.o fft.o hc.o
 
 

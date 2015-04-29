@@ -48,7 +48,36 @@ static int output_callback(const void *inputBuffer,
 void inputsignal(fftw_complex* signal, float* Record, int numsamples);
 void compute_band_weights(int numBands, bool linear, int n, float* p, float fres,float* out, float* bands);
 
-
+//converts microphone data to mono and converts to fftw_complex type 
+void inputsignal(fftw_complex* signal,float* Record, int numsamples) {
+  int k; 
+  float temp;  
+  FILE *inputsignal; 
+  inputsignal = fopen("../streams/inputsignal.txt","w");
+ // int i; //counter
+ //i dont know if this will work if numsamples is odd....
+  for (k = 0; k < numsamples; k++) {
+       if(CHANNELS == 2){
+         if(k%2 == 0){
+           signal[k/2][0] = (Record[k]+Record[k+1])/2;
+        //   printf("%f,\n",Record[k]);
+           signal[k/2][1] = 0;
+         }
+       }
+       else{
+         signal[k][0] = Record[k];
+         signal[k][1] = 0;
+       }
+       //mono microphone input data 
+       temp = signal[k][0];
+       if(inputsignal == NULL)
+       {
+        printf("%s\n", "BABY JESUSD WE HAVE A");
+       }
+       fprintf(inputsignal,"%f\n",signal[k][0]);
+  }
+  fclose(inputsignal);
+}
 
 int main(int argc, char* argv[])
 { char *linear, *maskNoise, *bandSpacing, *maskType;
@@ -64,6 +93,15 @@ int main(int argc, char* argv[])
   return 0; 
 }
 
+void A_weighting(int n, float* weights, float* in)
+{
+  int i;
+  for(i=0; i<n/2; i++){
+    in[i] = 10*log10(in[i]);
+  //  printf("%f\n",weights[i]);
+    in[i] = weights[i] + in[i];
+  }
+}
 
 /***************** read_write_streams *****************
  * inputs: char* bandSpacing
@@ -85,6 +123,7 @@ int read_write_streams(char* bandSpacing, char* maskNoise, char* maskType)
   PaError error_input,error_output;
   fftw_complex *in, *out;
   fftw_plan plan;
+  FILE *powerspec_file; 
   data* struct_data; 
   
 /* INITIALIZE STATE VARIABLES */
@@ -157,7 +196,7 @@ int read_write_streams(char* bandSpacing, char* maskNoise, char* maskType)
      bands[7] = 8000;
  }
 
-  A_compute_coeff(numsamples,A,fres);
+  A_compute_coeff(numsamples/2,A,fres);
 
 /* PORT AUDIO INIT W/ ERROR CHECKING */
   if( paNoError != (error_input = Pa_Initialize()) ) goto error;
@@ -213,6 +252,7 @@ int read_write_streams(char* bandSpacing, char* maskNoise, char* maskType)
   /* Read and Write */
    while(1)
    {
+      powerspec_file = fopen("../streams/powerspec.txt","w");
       if( error_output  != paNoError && 0) goto error_o;
       error_input = Pa_ReadStream(stream_input,recordsamples, FRAMES);
       if(error_input != paNoError && 0) goto error;
@@ -235,8 +275,8 @@ int read_write_streams(char* bandSpacing, char* maskNoise, char* maskType)
     
           struct_data->data[i] = summation;
         }
-          
-    }
+      fclose(powerspec_file);
+   }
 
    free(recordsamples);
    free(in);
@@ -286,14 +326,11 @@ data* output_file(int numBands, bool linear, bool rain)
     /* Intialization */
     counter = 0;
     if (rain)
-       if(linear) path_name = "data/rain/linear/";
-       else path_name = "data/rain/octave/";
+       if(linear) path_name = "../data/rain/linear/";
+       else path_name = "../data/rain/octave/";
     else
-       if(linear) path_name = "data/creek/linear/";
-       else path_name = "data/creek/octave/";
-
-       
-    
+       if(linear) path_name = "../data/creek/linear/";
+       else path_name = "../data/creek/octave/";
     files = 0; 
     num = scandir(path_name, &namelist, 0, alphasort);
     combination = (float*) malloc(sizeof(float)*819144*(numBands+1));
