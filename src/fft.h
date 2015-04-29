@@ -98,6 +98,7 @@ init_den (int n, char flag_window);
  */
 void
 weighted_power_spectrum_fftw (int n, fftw_complex *x, fftw_complex *y, float *p,
+			 float *weights,
 		     float den,
 		     char flag_window,
 		     fftw_plan plan);

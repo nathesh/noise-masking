@@ -49,35 +49,6 @@ void inputsignal(fftw_complex* signal, float* Record, int numsamples);
 void compute_band_weights(int numBands, bool linear, int n, float* p, float fres,float* out, float* bands);
 
 //converts microphone data to mono and converts to fftw_complex type 
-void inputsignal(fftw_complex* signal,float* Record, int numsamples) {
-  int k; 
-  float temp;  
-  FILE *inputsignal; 
-  inputsignal = fopen("../streams/inputsignal.txt","w");
- // int i; //counter
- //i dont know if this will work if numsamples is odd....
-  for (k = 0; k < numsamples; k++) {
-       if(CHANNELS == 2){
-         if(k%2 == 0){
-           signal[k/2][0] = (Record[k]+Record[k+1])/2;
-        //   printf("%f,\n",Record[k]);
-           signal[k/2][1] = 0;
-         }
-       }
-       else{
-         signal[k][0] = Record[k];
-         signal[k][1] = 0;
-       }
-       //mono microphone input data 
-       temp = signal[k][0];
-       if(inputsignal == NULL)
-       {
-        printf("%s\n", "BABY JESUSD WE HAVE A");
-       }
-       fprintf(inputsignal,"%f\n",signal[k][0]);
-  }
-  fclose(inputsignal);
-}
 
 int main(int argc, char* argv[])
 { char *linear, *maskNoise, *bandSpacing, *maskType;
@@ -482,6 +453,8 @@ void inputsignal(fftw_complex* signal,float* Record, int numsamples) {
   int k;  
  // int i; //counter
  //i dont know if this will work if numsamples is odd....
+  FILE *inputsignal;
+  inputsignal = fopen("../streams/inputsignal.txt","w");
   for (k = 0; k < numsamples; k++) 
   {
        if( (k % 2 == 0) && CHANNELS == 2) 
@@ -494,7 +467,9 @@ void inputsignal(fftw_complex* signal,float* Record, int numsamples) {
            signal[k][0] = Record[k];
            signal[k][1] = 0;
        } 
+     fprintf(inputsignal,"%f\n",signal[k][0]);
   }
+    fclose(inputsignal);
 }
 
 
