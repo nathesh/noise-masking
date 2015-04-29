@@ -406,7 +406,7 @@ static int output_callback(const void *inputBuffer,
 
   data* data_struct = (data*) userData;
   sat = data_struct->num_frames*data_struct->channels;
-  curs = 3*data_struct->num_frames/2-1000
+  curs = 3*data_struct->num_frames/2-1000;
 
   for (i = 0; i < framesPerBuffer; i++)
   {
